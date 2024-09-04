@@ -99,7 +99,6 @@ impl cursor::Cursor<'_> {
             line: self.line(),
             column: self.column(),
         };
-        // println!("DEBUG POINT: current pos: {}", pos);
         let token = self.advance_token_();
         Posed::new(token, pos)
     }
