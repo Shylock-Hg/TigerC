@@ -28,7 +28,7 @@ impl<'a> Cursor<'a> {
         }
     }
 
-    pub fn inc_line(&mut self) {
+    fn inc_line(&mut self) {
         self.line += 1;
         self.column = 1;
     }
@@ -37,7 +37,7 @@ impl<'a> Cursor<'a> {
         self.line
     }
 
-    pub fn inc_column(&mut self) {
+    fn inc_column(&mut self) {
         self.column += 1;
     }
 
@@ -107,7 +107,11 @@ impl<'a> Cursor<'a> {
     /// Moves to the next character.
     pub(crate) fn bump(&mut self) -> Option<char> {
         let c = self.chars.next()?;
-        self.inc_column();
+        match c {
+            '\r' => self.inc_line(),
+            '\t' => self.column += 4,
+            _ => self.inc_column(),
+        }
 
         #[cfg(debug_assertions)]
         {

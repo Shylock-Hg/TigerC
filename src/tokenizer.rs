@@ -111,10 +111,7 @@ impl cursor::Cursor<'_> {
                     '*' => self.block_comment(),
                     _ => Token::Slash,
                 },
-                '\n' => {
-                    self.inc_line();
-                    Token::Dummy
-                }
+                '\n' => Token::Dummy,
                 c if is_whitespace(c) => self.whitespace(),
                 '&' => Token::And,
                 '|' => Token::Or,
