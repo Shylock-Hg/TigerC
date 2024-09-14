@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use unicode_xid;
 
-use crate::cursor;
+use crate::{cursor, ident_pool, ident_pool::Symbol};
 
 #[derive(Debug)]
 pub struct Pos {
@@ -49,7 +49,7 @@ pub enum Error {
 #[derive(Debug)]
 pub enum Token {
     Comment,
-    Ident(String),
+    Ident(Symbol),
     Number(i64),
     Str(String),
     Slash,        // /
@@ -162,7 +162,7 @@ impl cursor::Cursor<'_> {
                     let mut ident = String::new();
                     ident.push(c);
                     self.ident_continue(&mut ident);
-                    Token::Ident(ident)
+                    Token::Ident(ident_pool::create_symbol(&ident))
                 }
                 _ => Token::Error(Error::UnknownChar),
             }
