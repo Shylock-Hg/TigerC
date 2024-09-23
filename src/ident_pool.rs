@@ -10,7 +10,8 @@ pub fn create_symbol(ident: &str) -> Symbol {
 }
 
 pub fn get_str(symbol: &Symbol) -> String {
-    // TODO remove clone
+    // This is useless in normal process of compile
+    // So clone cost is acceptable.
     IDENT_POOL.lock().unwrap().get_str(symbol).to_owned()
 }
 
