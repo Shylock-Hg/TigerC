@@ -7,7 +7,6 @@ use std::str::Chars;
 pub struct Cursor<'a> {
     line: usize,
     column: usize,
-    len_remaining: usize,
     /// Iterator over chars. Slightly faster than a &str.
     chars: Chars<'a>,
     #[cfg(debug_assertions)]
@@ -21,7 +20,6 @@ impl<'a> Cursor<'a> {
         Cursor {
             line: 1,
             column: 1,
-            len_remaining: input.len(),
             chars: input.chars(),
             #[cfg(debug_assertions)]
             prev: EOF_CHAR,
@@ -72,14 +70,6 @@ impl<'a> Cursor<'a> {
         self.chars.clone().next().unwrap_or(EOF_CHAR)
     }
 
-    /// Peeks the second symbol from the input stream without consuming it.
-    pub(crate) fn second(&self) -> char {
-        // `.next()` optimizes better than `.nth(1)`
-        let mut iter = self.chars.clone();
-        iter.next();
-        iter.next().unwrap_or(EOF_CHAR)
-    }
-
     /// Peeks the third symbol from the input stream without consuming it.
     pub fn third(&self) -> char {
         // `.next()` optimizes better than `.nth(1)`
@@ -92,16 +82,6 @@ impl<'a> Cursor<'a> {
     /// Checks if there is nothing more to consume.
     pub(crate) fn is_eof(&self) -> bool {
         self.chars.as_str().is_empty()
-    }
-
-    /// Returns amount of already consumed symbols.
-    pub(crate) fn pos_within_token(&self) -> u32 {
-        (self.len_remaining - self.chars.as_str().len()) as u32
-    }
-
-    /// Resets the number of bytes consumed to 0.
-    pub(crate) fn reset_pos_within_token(&mut self) {
-        self.len_remaining = self.chars.as_str().len();
     }
 
     /// Moves to the next character.

@@ -27,7 +27,7 @@ pub struct Posed<T> {
 
 impl<T> Posed<T> {
     pub fn new(node: T, pos: Pos) -> Posed<T> {
-        Posed { node, pos: pos }
+        Posed { node, pos }
     }
 
     pub fn node(&self) -> &T {
@@ -177,7 +177,7 @@ impl cursor::Cursor<'_> {
         // bump `*`
         self.bump();
         // nested depth of block comments
-        let mut depth = 1 as usize;
+        let mut depth = 1_usize;
         while let Some(c) = self.bump() {
             match c {
                 '/' if self.first() == '*' => {
@@ -245,7 +245,7 @@ impl cursor::Cursor<'_> {
                     }
                 }
                 '\\' => {
-                    if escape == true {
+                    if escape {
                         escape = false;
                         buf.push(self.bump().unwrap());
                     } else {
@@ -315,5 +315,5 @@ pub fn is_id_continue(c: char) -> bool {
 }
 
 pub fn is_digit(c: char) -> bool {
-    c >= '0' && c <= '9'
+    c.is_ascii_digit()
 }
