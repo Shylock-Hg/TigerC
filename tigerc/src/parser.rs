@@ -139,4 +139,34 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let _type_decl = parser.parse_type_decl();
     }
+
+    #[test]
+    fn test_parse_type_decl_struct() {
+        let doc = "
+        type TypeName := { f1: t1, f2: t2 }
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_type_decl();
+    }
+
+    #[test]
+    fn test_parse_type_decl_empty_struct() {
+        let doc = "
+        type TypeName := {}
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_type_decl();
+    }
+
+    #[test]
+    fn test_parse_type_decl_array() {
+        let doc = "
+        type TypeName := array of t1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_type_decl();
+    }
 }
