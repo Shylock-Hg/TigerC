@@ -3,6 +3,20 @@ use std::fmt::{Debug, Display, Write};
 use std::sync::LazyLock;
 use std::sync::Mutex;
 
+use tigerc_macros::symbols;
+
+symbols! {
+    Keywords {
+        TOK_TYPE: "type",
+        TOK_ARRAY: "array",
+        TOK_OF: "of",
+    }
+}
+
+pub mod kw {
+    pub use super::kw_generated::*;
+}
+
 static IDENT_POOL: LazyLock<Mutex<IdentPool>> = LazyLock::new(|| Mutex::new(IdentPool::new()));
 
 pub fn create_symbol(ident: &str) -> Symbol {
@@ -15,7 +29,7 @@ pub fn get_str(symbol: &Symbol) -> String {
     IDENT_POOL.lock().unwrap().get_str(symbol).to_owned()
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Symbol(u32);
 
 impl Debug for Symbol {
@@ -38,9 +52,9 @@ struct IdentPool {
 }
 
 impl IdentPool {
-    pub fn new() -> Self {
+    fn prefill(fills: &[&str]) -> Self {
         IdentPool {
-            inner: IndexSet::default(),
+            inner: fills.iter().map(|s| s.to_owned().to_owned()).collect(),
         }
     }
 
@@ -61,24 +75,40 @@ impl IdentPool {
 mod tests {
 
     use super::IdentPool;
+    use super::Symbol;
+    use super::PREDEFINED_SIZE;
 
     #[test]
     fn test_ident_pool() {
         let mut pool = IdentPool::new();
         let symbol1 = pool.create("symbol1");
-        assert_eq!(symbol1.0, 0);
+        assert_eq!(symbol1.0, PREDEFINED_SIZE + 0);
         assert_eq!(pool.get_str(&symbol1), "symbol1");
 
         // repeat
         pool.create("symbol1");
-        assert_eq!(symbol1.0, 0);
+        assert_eq!(symbol1.0, PREDEFINED_SIZE + 0);
         assert_eq!(pool.get_str(&symbol1), "symbol1");
 
         // another
         let symbol2 = pool.create("symbol2");
-        assert_eq!(symbol2.0, 1);
+        assert_eq!(symbol2.0, PREDEFINED_SIZE + 1);
         assert_eq!(pool.get_str(&symbol2), "symbol2");
 
         assert_eq!(pool.get_str(&symbol1), "symbol1");
+    }
+
+    #[test]
+    fn test_ident_pool_predefined() {
+        let mut pool = IdentPool::new();
+        let symbol1 = pool.create("type");
+        assert_eq!(symbol1.0, 0);
+        assert_eq!(pool.get_str(&symbol1), "type");
+    }
+
+    #[test]
+    fn test_ident_idx_of_type() {
+        let pool = IdentPool::new();
+        assert_eq!(pool.get_str(&Symbol(0)), "type");
     }
 }

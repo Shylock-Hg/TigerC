@@ -34,19 +34,23 @@ impl<T> Posed<T> {
         &self.node
     }
 
+    pub fn move_node(self) -> T {
+        self.node
+    }
+
     pub fn pos(&self) -> &Pos {
         &self.pos
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     UnknownChar,
     CommentUnterminated,
     StringLiteralUnterminated,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     Comment,
     Ident(Symbol),
@@ -93,6 +97,14 @@ pub fn tokenize(content: &str) -> impl Iterator<Item = Posed<Token>> + '_ {
     })
 }
 
+pub fn debug_token_stream(it: impl Iterator<Item = Posed<Token>>) -> String {
+    let mut buf = String::new();
+    for i in it {
+        buf.push_str(&format!("{:?}, ", i));
+    }
+    buf
+}
+
 impl cursor::Cursor<'_> {
     pub fn advance_token(&mut self) -> Posed<Token> {
         let pos = Pos {
@@ -100,7 +112,11 @@ impl cursor::Cursor<'_> {
             column: self.column(),
         };
         let token = self.advance_token_();
-        Posed::new(token, pos)
+        if let Token::Dummy = token {
+            self.advance_token()
+        } else {
+            Posed::new(token, pos)
+        }
     }
 
     fn advance_token_(&mut self) -> Token {

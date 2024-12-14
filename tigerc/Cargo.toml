@@ -1,0 +1,9 @@
+[package]
+name = "tiger_c"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+unicode-xid = "0.2.4"
+indexmap = "2.2.6"
+tigerc-macros = { path = "../tigerc-macros" }
