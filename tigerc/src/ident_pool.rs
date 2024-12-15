@@ -10,6 +10,9 @@ symbols! {
         TOK_TYPE: "type",
         TOK_ARRAY: "array",
         TOK_OF: "of",
+        TOK_INT: "int",
+        TOK_STRING: "string",
+        TOK_NIL: "nil",
     }
 }
 
