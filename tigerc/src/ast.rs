@@ -1,8 +1,11 @@
 use crate::ident_pool::Symbol;
 
-pub struct Ast {}
+pub enum Ast {
+    Decl(Decl),
+    Expr(Expr),
+}
 
-enum Value {
+pub enum Value {
     // nothing, e.g. `()`
     Nothing,
     // nil
@@ -11,11 +14,11 @@ enum Value {
     Str(String),
 }
 
-enum Unary {
+pub enum Unary {
     Negative(Box<Expr>),
 }
 
-enum Binary {
+pub enum Binary {
     Add(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
@@ -33,13 +36,13 @@ enum Binary {
 }
 
 // RecordExpr => <ident> "{" [<ident> "=" expr, ...] "}"
-struct RecordExpr {
+pub struct RecordExpr {
     ty: Symbol,
     init: Vec<(Symbol, Expr)>,
 }
 
 // ArrayExpr => <ident> [expr] of expr
-struct ArrayExpr {
+pub struct ArrayExpr {
     // element type
     ty: Symbol,
     len: Box<Expr>,
@@ -47,25 +50,25 @@ struct ArrayExpr {
 }
 
 // "if" expr "then" expr "else" expr
-struct IfThenElseExpr {
+pub struct IfThenElseExpr {
     condition: Box<Expr>,
     then: Box<Expr>,
     el: Box<Expr>,
 }
 
 // "if" expr "then" expr
-struct IfThen {
+pub struct IfThen {
     condition: Box<Expr>,
     then: Box<Expr>,
 }
 // "while" expr "do" expr
-struct While {
+pub struct While {
     condition: Box<Expr>,
     body: Box<Expr>,
 }
 
 // "for" <ident> ":=" expr "to" expr "do" expr
-struct For {
+pub struct For {
     local: Symbol,
     lower: Box<Expr>,
     upper: Box<Expr>,
@@ -73,7 +76,7 @@ struct For {
 }
 
 // "let" decls "in" expr[;expr...] "end"
-struct Let {
+pub struct Let {
     decls: Vec<Decl>,
     sequence: Vec<Expr>,
 }
@@ -81,13 +84,13 @@ struct Let {
 // lvalue => <ident>
 //        => lvalue "." <ident>
 //        => lvalue "[" expr "]"
-enum LeftValue {
+pub enum LeftValue {
     Variable(Symbol),
     Field(Box<LeftValue>, Symbol),
     Subscript(Box<LeftValue>, Box<Expr>),
 }
 
-enum Expr {
+pub enum Expr {
     Literal(Value),
     LeftValue(LeftValue),
     // (exp1, exp2, ...)
@@ -110,30 +113,30 @@ enum Expr {
 // Decl => TypeDecl
 //      => VarDecl
 //      => FuncDecl
-enum Decl {
+pub enum Decl {
     Type(TypeDecl),
-    Var,
-    Func,
+    Var(VarDecl),
+    Func(FuncDecl),
 }
 
 // VarDecl => "var" <ident> ":=" expr
 //         => "var" <ident> ":" <ident> := expr
-struct VarDecl {
-    name: Symbol,
-    ty: Option<Symbol>,
-    init: Expr,
+pub struct VarDecl {
+    pub name: Symbol,
+    pub ty: Option<Symbol>,
+    pub init: Expr,
 }
 
 // FuncDecl => "function" <ident> "(" TypeFields ")" "=" expr
 //          => "function" <ident> "(" TypeFields ")" ":" <ident> "=" expr
-struct FuncDecl {
-    name: Symbol,
-    args: Vec<Field>,
-    ret_ty: Option<Symbol>,
-    body: Expr,
+pub struct FuncDecl {
+    pub name: Symbol,
+    pub args: Vec<Field>,
+    pub ret_ty: Option<Symbol>,
+    pub body: Expr,
 }
 
-// TypeDecl => "type" IDENT := Ty
+// TypeDecl => "type" IDENT = Ty
 // Ty => IDENT
 //    => "{" TyFields "}"
 //    => "array" "of" IDENT

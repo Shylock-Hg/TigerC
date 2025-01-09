@@ -3,7 +3,7 @@ use unicode_xid;
 
 use crate::{cursor, ident_pool, ident_pool::Symbol};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pos {
     pub line: usize,
     pub column: usize,
@@ -19,7 +19,7 @@ impl Display for Pos {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Posed<T> {
     node: T,
     pos: Pos,
@@ -43,14 +43,14 @@ impl<T> Posed<T> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Error {
     UnknownChar,
     CommentUnterminated,
     StringLiteralUnterminated,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     Comment,
     Ident(Symbol),

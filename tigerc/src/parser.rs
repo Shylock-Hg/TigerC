@@ -41,20 +41,101 @@ impl Parser {
         }
     }
 
-    fn parse_type_decl(&mut self) -> ast::TypeDecl {
-        let tok = self.bump().unwrap();
-        if let Token::Ident(symbol) = tok.node() {
-            if *symbol == kw::TOK_TYPE {
-                let type_name = self.eat_ident();
-                self.eat_expect(Token::Assign);
-                let ty = self.parse_ty();
-                ast::TypeDecl { type_name, ty }
-            } else {
-                Self::unexpected_token(&tok)
-            }
+    fn eat_field(&mut self) -> Option<ast::Field> {
+        let current = self.look().cloned().unwrap();
+        if let Token::Ident(name) = current.node() {
+            self.bump();
+            self.eat_expect(Token::Colon);
+            let ty = self.eat_ident();
+            Some(ast::Field { name: *name, ty })
         } else {
-            Self::unexpected_token(&tok)
+            None
         }
+    }
+
+    fn eat_field_list(&mut self) -> Vec<ast::Field> {
+        let mut fields = vec![];
+        while let Some(field) = self.eat_field() {
+            fields.push(field);
+            if self.look().unwrap().node() == &Token::Comma {
+                self.bump();
+            } else {
+                break;
+            }
+        }
+        fields
+    }
+
+    fn parse_expr(&mut self) -> ast::Expr {
+        let current = self.bump().unwrap();
+        match current.node() {
+            Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
+            Token::Str(s) => ast::Expr::Literal(ast::Value::Str(s.clone())),
+            _ => unimplemented!(),
+        }
+    }
+
+    fn parse_decl(&mut self) -> ast::Decl {
+        let current = self.look().unwrap();
+        match current.node() {
+            Token::Ident(s) => match s {
+                &kw::TOK_TYPE => ast::Decl::Type(self.parse_type_decl()),
+                &kw::TOK_VAR => ast::Decl::Var(self.parse_var_decl()),
+                &kw::TOK_FUNCTION => {
+                    unimplemented!()
+                }
+                _ => Self::unexpected_token(current),
+            },
+            _ => Self::unexpected_token(current),
+        }
+    }
+
+    fn parse_function_decl(&mut self) -> ast::FuncDecl {
+        self.eat_keyword(kw::TOK_FUNCTION);
+        let name = self.eat_ident();
+        self.eat_expect(Token::OpenParen);
+        let fields = self.eat_field_list();
+        self.eat_expect(Token::CloseParen);
+        let ret_ty = match self.look().unwrap().node() {
+            Token::Colon => {
+                self.bump();
+                Some(self.eat_ident())
+            }
+            _ => None,
+        };
+        self.eat_expect(Token::Eq);
+        let body = self.parse_expr();
+
+        ast::FuncDecl {
+            name,
+            args: fields,
+            ret_ty,
+            body,
+        }
+    }
+
+    fn parse_var_decl(&mut self) -> ast::VarDecl {
+        self.eat_keyword(kw::TOK_VAR);
+        let name = self.eat_ident();
+        let ty: Option<Symbol> = match self.look().unwrap().node() {
+            Token::Colon => {
+                self.bump();
+                Some(self.eat_ident())
+            }
+            Token::Assign => None,
+            _ => Self::unexpected_token(self.look().unwrap()),
+        };
+        self.eat_expect(Token::Assign);
+        let init = self.parse_expr();
+        ast::VarDecl { name, ty, init }
+    }
+
+    fn parse_type_decl(&mut self) -> ast::TypeDecl {
+        self.eat_keyword(kw::TOK_TYPE);
+        let type_name = self.eat_ident();
+        self.eat_expect(Token::Eq);
+        let ty = self.parse_ty();
+        ast::TypeDecl { type_name, ty }
     }
 
     fn parse_ty(&mut self) -> ast::Ty {
@@ -133,7 +214,7 @@ mod tests {
     #[test]
     fn test_parse_type_decl() {
         let doc = "
-        type TypeName := Type2
+        type TypeName = Type2
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
@@ -143,7 +224,7 @@ mod tests {
     #[test]
     fn test_parse_type_decl_struct() {
         let doc = "
-        type TypeName := { f1: t1, f2: t2 }
+        type TypeName = { f1: t1, f2: t2 }
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
@@ -153,7 +234,7 @@ mod tests {
     #[test]
     fn test_parse_type_decl_empty_struct() {
         let doc = "
-        type TypeName := {}
+        type TypeName = {}
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
@@ -163,10 +244,60 @@ mod tests {
     #[test]
     fn test_parse_type_decl_array() {
         let doc = "
-        type TypeName := array of t1
+        type TypeName = array of t1
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let _type_decl = parser.parse_type_decl();
+    }
+
+    #[test]
+    fn test_parse_func_decl() {
+        let doc = "
+        function funcName (arg1: int, arg2: string) = 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_function_decl();
+    }
+
+    #[test]
+    fn test_parse_func_decl_with_return_type() {
+        let doc = "
+        function funcName (arg1: int, arg2: string) : int = 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_function_decl();
+    }
+
+    #[test]
+    fn test_parse_var_decl() {
+        let doc = "
+        var varName := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_var_decl();
+    }
+
+    #[test]
+    fn test_parse_var_decl_with_type() {
+        let doc = "
+        var varName : int := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _type_decl = parser.parse_var_decl();
+    }
+
+    #[test]
+    fn test_parse_decl() {
+        let doc = "
+        var varName : int := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _decl = parser.parse_decl();
     }
 }

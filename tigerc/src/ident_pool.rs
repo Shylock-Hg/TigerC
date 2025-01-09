@@ -13,6 +13,8 @@ symbols! {
         TOK_INT: "int",
         TOK_STRING: "string",
         TOK_NIL: "nil",
+        TOK_VAR: "var",
+        TOK_FUNCTION: "function",
     }
 }
 
