@@ -66,11 +66,37 @@ impl Parser {
         fields
     }
 
+    // "." <ident>
+    // "[" <expr> "]"
+    fn parse_left_value_suffix(&mut self, left: ast::LeftValue) -> ast::LeftValue {
+        match self.look().unwrap().node() {
+            Token::Dot => {
+                self.bump();
+                let ident = self.eat_ident();
+                self.parse_left_value_suffix(ast::LeftValue::Field(Box::new(left), ident))
+            }
+            Token::OpenBracket => {
+                self.bump();
+                let expr = self.parse_expr();
+                self.eat_expect(Token::CloseBracket);
+                self.parse_left_value_suffix(ast::LeftValue::Subscript(
+                    Box::new(left),
+                    Box::new(expr),
+                ))
+            }
+            _ => left,
+        }
+    }
+
     fn parse_expr(&mut self) -> ast::Expr {
         let current = self.bump().unwrap();
         match current.node() {
             Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
             Token::Str(s) => ast::Expr::Literal(ast::Value::Str(s.clone())),
+            Token::Ident(s) => {
+                let prev = ast::LeftValue::Variable(*s);
+                ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
+            }
             _ => unimplemented!(),
         }
     }
@@ -299,5 +325,17 @@ mod tests {
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let _decl = parser.parse_decl();
+    }
+
+    #[test]
+    fn test_parse_left_value() {
+        // this will panic without tailing ";"
+        // but in a real program, expression won't end with EOF, so it won't happen
+        let doc = "
+        varName.fieldName[1].field2;
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let _ = parser.parse_expr();
     }
 }
