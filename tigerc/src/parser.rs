@@ -122,6 +122,10 @@ impl Parser {
                 self.parse_sequence_suffix(&mut v);
                 ast::Expr::Sequence(v)
             }
+            Token::Minus => {
+                let expr = self.parse_expr();
+                ast::Expr::Unary(ast::Unary::Negative(Box::new(expr)))
+            }
             _ => unimplemented!(),
         }
     }
@@ -375,5 +379,18 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let seq = parser.parse_expr();
         assert_eq!(format!("{}", seq), "(1; 2; 3)");
+    }
+
+    #[test]
+    fn test_parse_unary_negative() {
+        // this will panic without tailing ";"
+        // but in a real program, expression won't end with EOF, so it won't happen
+        let doc = "
+        - 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let negative = parser.parse_expr();
+        assert_eq!(format!("{}", negative), "-1");
     }
 }
