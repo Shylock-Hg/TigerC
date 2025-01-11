@@ -88,6 +88,23 @@ impl Parser {
         }
     }
 
+    // "(" <expr> ";" <expr>; ... <expr>")"
+    fn parse_sequence_suffix(&mut self, v: &mut Vec<ast::Expr>) {
+        loop {
+            match self.look().unwrap().node() {
+                Token::SemiColon => {
+                    self.bump();
+                    let next = self.parse_expr();
+                    v.push(next);
+                }
+                Token::CloseParen => {
+                    return;
+                }
+                _ => Self::unexpected_token(self.look().unwrap()),
+            }
+        }
+    }
+
     fn parse_expr(&mut self) -> ast::Expr {
         let current = self.bump().unwrap();
         match current.node() {
@@ -96,6 +113,14 @@ impl Parser {
             Token::Ident(s) => {
                 let prev = ast::LeftValue::Variable(*s);
                 ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
+            }
+            Token::OpenParen => {
+                let expr = self.parse_expr();
+                self.eat_expect(Token::SemiColon);
+                let expr2 = self.parse_expr();
+                let mut v = vec![expr, expr2];
+                self.parse_sequence_suffix(&mut v);
+                ast::Expr::Sequence(v)
             }
             _ => unimplemented!(),
         }
@@ -337,5 +362,18 @@ mod tests {
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let _ = parser.parse_expr();
+    }
+
+    #[test]
+    fn test_parse_sequence() {
+        // this will panic without tailing ";"
+        // but in a real program, expression won't end with EOF, so it won't happen
+        let doc = "
+        (1; 2; 3)
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let seq = parser.parse_expr();
+        assert_eq!(format!("{}", seq), "(1; 2; 3)");
     }
 }
