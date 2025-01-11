@@ -137,7 +137,7 @@ impl Parser {
 
     // parse expression until lower precedence
     fn parse_sub_expr(&mut self, precedence: Precedence) -> ast::Expr {
-        let mut prefix = self.parse_prefix();
+        let mut prefix = self.parse_expr_prefix();
         loop {
             let next_precedence = self.next_precedence();
             if precedence >= next_precedence {
@@ -154,7 +154,7 @@ impl Parser {
             .unwrap_or(Precedence::Lowest)
     }
 
-    fn parse_prefix(&mut self) -> ast::Expr {
+    fn parse_expr_prefix(&mut self) -> ast::Expr {
         let current = self.bump().unwrap();
         match current.node() {
             Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
@@ -172,7 +172,7 @@ impl Parser {
                 ast::Expr::Sequence(v)
             }
             Token::Minus => {
-                let expr = self.parse_prefix();
+                let expr = self.parse_expr_prefix();
                 ast::Expr::Unary(ast::Unary::Negative(Box::new(expr)))
             }
             _ => unimplemented!("{:?}", current),
