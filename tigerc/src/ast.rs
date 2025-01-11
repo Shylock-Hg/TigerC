@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::ident_pool::Symbol;
 
+#[derive(Debug)]
 pub enum Ast {
     Decl(Decl),
     Expr(Expr),
@@ -16,6 +17,7 @@ impl Display for Ast {
     }
 }
 
+#[derive(Debug)]
 pub enum Value {
     // nothing, e.g. `()`
     Nothing,
@@ -36,6 +38,7 @@ impl Display for Value {
     }
 }
 
+#[derive(Debug)]
 pub enum Unary {
     Negative(Box<Expr>),
 }
@@ -48,6 +51,7 @@ impl Display for Unary {
     }
 }
 
+#[derive(Debug)]
 pub enum Binary {
     Add(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
@@ -68,25 +72,26 @@ pub enum Binary {
 impl Display for Binary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Binary::Add(lhs, rhs) => write!(f, "{} + {}", lhs, rhs),
-            Binary::Minus(lhs, rhs) => write!(f, "{} - {}", lhs, rhs),
-            Binary::Multiply(lhs, rhs) => write!(f, "{} * {}", lhs, rhs),
-            Binary::Divide(lhs, rhs) => write!(f, "{} / {}", lhs, rhs),
+            Binary::Add(lhs, rhs) => write!(f, "({} + {})", lhs, rhs),
+            Binary::Minus(lhs, rhs) => write!(f, "({} - {})", lhs, rhs),
+            Binary::Multiply(lhs, rhs) => write!(f, "({} * {})", lhs, rhs),
+            Binary::Divide(lhs, rhs) => write!(f, "({} / {})", lhs, rhs),
 
-            Binary::Eq(lhs, rhs) => write!(f, "{} = {}", lhs, rhs),
-            Binary::Ne(lhs, rhs) => write!(f, "{} <> {}", lhs, rhs),
-            Binary::Gt(lhs, rhs) => write!(f, "{} > {}", lhs, rhs),
-            Binary::Ge(lhs, rhs) => write!(f, "{} >= {}", lhs, rhs),
-            Binary::Lt(lhs, rhs) => write!(f, "{} < {}", lhs, rhs),
-            Binary::Le(lhs, rhs) => write!(f, "{} <= {}", lhs, rhs),
+            Binary::Eq(lhs, rhs) => write!(f, "({} = {})", lhs, rhs),
+            Binary::Ne(lhs, rhs) => write!(f, "({} <> {})", lhs, rhs),
+            Binary::Gt(lhs, rhs) => write!(f, "({} > {})", lhs, rhs),
+            Binary::Ge(lhs, rhs) => write!(f, "({} >= {})", lhs, rhs),
+            Binary::Lt(lhs, rhs) => write!(f, "({} < {})", lhs, rhs),
+            Binary::Le(lhs, rhs) => write!(f, "({} <= {})", lhs, rhs),
 
-            Binary::And(lhs, rhs) => write!(f, "{} & {}", lhs, rhs),
-            Binary::Or(lhs, rhs) => write!(f, "{} | {}", lhs, rhs),
+            Binary::And(lhs, rhs) => write!(f, "({} & {})", lhs, rhs),
+            Binary::Or(lhs, rhs) => write!(f, "({} | {})", lhs, rhs),
         }
     }
 }
 
 // RecordExpr => <ident> "{" [<ident> "=" expr, ...] "}"
+#[derive(Debug)]
 pub struct RecordExpr {
     ty: Symbol,
     init: Vec<(Symbol, Expr)>,
@@ -106,6 +111,7 @@ impl Display for RecordExpr {
 }
 
 // ArrayExpr => <ident> [expr] of expr
+#[derive(Debug)]
 pub struct ArrayExpr {
     // element type
     ty: Symbol,
@@ -121,6 +127,7 @@ impl Display for ArrayExpr {
 }
 
 // "if" expr "then" expr "else" expr
+#[derive(Debug)]
 pub struct IfThenElseExpr {
     condition: Box<Expr>,
     then: Box<Expr>,
@@ -138,6 +145,7 @@ impl Display for IfThenElseExpr {
 }
 
 // "if" expr "then" expr
+#[derive(Debug)]
 pub struct IfThen {
     condition: Box<Expr>,
     then: Box<Expr>,
@@ -150,6 +158,7 @@ impl Display for IfThen {
 }
 
 // "while" expr "do" expr
+#[derive(Debug)]
 pub struct While {
     condition: Box<Expr>,
     body: Box<Expr>,
@@ -162,6 +171,7 @@ impl Display for While {
 }
 
 // "for" <ident> ":=" expr "to" expr "do" expr
+#[derive(Debug)]
 pub struct For {
     local: Symbol,
     lower: Box<Expr>,
@@ -180,6 +190,7 @@ impl Display for For {
 }
 
 // "let" decls "in" expr[;expr...] "end"
+#[derive(Debug)]
 pub struct Let {
     decls: Vec<Decl>,
     sequence: Vec<Expr>,
@@ -205,6 +216,7 @@ impl Display for Let {
 // lvalue => <ident>
 //        => lvalue "." <ident>
 //        => lvalue "[" expr "]"
+#[derive(Debug)]
 pub enum LeftValue {
     Variable(Symbol),
     Field(Box<LeftValue>, Symbol),
@@ -221,6 +233,7 @@ impl Display for LeftValue {
     }
 }
 
+#[derive(Debug)]
 pub enum Expr {
     Literal(Value),
     LeftValue(LeftValue),
@@ -285,6 +298,7 @@ impl Display for Expr {
 // Decl => TypeDecl
 //      => VarDecl
 //      => FuncDecl
+#[derive(Debug)]
 pub enum Decl {
     Type(TypeDecl),
     Var(VarDecl),
@@ -303,6 +317,7 @@ impl Display for Decl {
 
 // VarDecl => "var" <ident> ":=" expr
 //         => "var" <ident> ":" <ident> := expr
+#[derive(Debug)]
 pub struct VarDecl {
     pub name: Symbol,
     pub ty: Option<Symbol>,
@@ -320,6 +335,7 @@ impl Display for VarDecl {
 
 // FuncDecl => "function" <ident> "(" TypeFields ")" "=" expr
 //          => "function" <ident> "(" TypeFields ")" ":" <ident> "=" expr
+#[derive(Debug)]
 pub struct FuncDecl {
     pub name: Symbol,
     pub args: Vec<Field>,
@@ -350,6 +366,7 @@ impl Display for FuncDecl {
 //    => "array" "of" IDENT
 // TypeFields => %empty
 //            => IDENT: IDENT [, IDENT: IDENT...]
+#[derive(Debug)]
 pub struct TypeDecl {
     pub type_name: Symbol,
     pub ty: Ty,
@@ -361,6 +378,7 @@ impl Display for TypeDecl {
     }
 }
 
+#[derive(Debug)]
 pub enum Ty {
     Name(Symbol),
     Struct(TyStruct),
@@ -377,6 +395,7 @@ impl Display for Ty {
     }
 }
 
+#[derive(Debug)]
 pub struct TyStruct(pub Vec<Field>);
 
 impl Display for TyStruct {
@@ -392,6 +411,7 @@ impl Display for TyStruct {
     }
 }
 
+#[derive(Debug)]
 pub struct Field {
     pub name: Symbol,
     pub ty: Symbol,

@@ -2,6 +2,32 @@ use crate::ast;
 use crate::ident_pool::{kw, Symbol};
 use crate::tokenizer::{Posed, Token};
 
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+enum Precedence {
+    Lowest = 0,
+    Or = 1,             // |
+    And = 2,            // &
+    Compare = 3,        // ==, !=, <=, >=, <, >
+    PlusMinus = 4,      // +, -
+    MultiplyDivide = 5, // *, /
+    Prefix = 6,         // -
+}
+
+impl Precedence {
+    fn from_token(tok: &Token) -> Precedence {
+        match tok {
+            Token::Or => Precedence::Or,
+            Token::And => Precedence::And,
+            Token::Eq | Token::Ne | Token::Le | Token::Ge | Token::Lt | Token::Gt => {
+                Precedence::Compare
+            }
+            Token::Plus | Token::Minus => Precedence::PlusMinus,
+            Token::Star | Token::Slash => Precedence::MultiplyDivide,
+            _ => Precedence::Lowest,
+        }
+    }
+}
+
 pub struct Parser {
     cursor: std::iter::Peekable<Box<dyn Iterator<Item = Posed<Token>>>>,
 }
@@ -106,6 +132,29 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> ast::Expr {
+        self.parse_sub_expr(Precedence::Lowest)
+    }
+
+    // parse expression until lower precedence
+    fn parse_sub_expr(&mut self, precedence: Precedence) -> ast::Expr {
+        let mut prefix = self.parse_prefix();
+        loop {
+            let next_precedence = self.next_precedence();
+            if precedence >= next_precedence {
+                break;
+            }
+            prefix = self.parse_expr_suffix(prefix, next_precedence);
+        }
+        prefix
+    }
+
+    fn next_precedence(&mut self) -> Precedence {
+        self.look()
+            .map(|n| Precedence::from_token(n.node()))
+            .unwrap_or(Precedence::Lowest)
+    }
+
+    fn parse_prefix(&mut self) -> ast::Expr {
         let current = self.bump().unwrap();
         match current.node() {
             Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
@@ -123,11 +172,42 @@ impl Parser {
                 ast::Expr::Sequence(v)
             }
             Token::Minus => {
-                let expr = self.parse_expr();
+                let expr = self.parse_prefix();
                 ast::Expr::Unary(ast::Unary::Negative(Box::new(expr)))
             }
-            _ => unimplemented!(),
+            _ => unimplemented!("{:?}", current),
         }
+    }
+
+    fn parse_expr_suffix(&mut self, left: ast::Expr, precedence: Precedence) -> ast::Expr {
+        let look = self.bump().unwrap();
+        ast::Expr::Binary(match look.node() {
+            Token::Plus => {
+                ast::Binary::Add(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            Token::Minus => {
+                ast::Binary::Minus(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            Token::Star => {
+                ast::Binary::Multiply(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            Token::Slash => {
+                ast::Binary::Divide(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            Token::Eq => ast::Binary::Eq(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::Ne => ast::Binary::Ne(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::Le => ast::Binary::Le(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::Ge => ast::Binary::Ge(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::Lt => ast::Binary::Lt(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::Gt => ast::Binary::Gt(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
+            Token::And => {
+                ast::Binary::And(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            Token::Or => {
+                ast::Binary::And(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            }
+            _ => unreachable!(),
+        })
     }
 
     fn parse_decl(&mut self) -> ast::Decl {
@@ -392,5 +472,30 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let negative = parser.parse_expr();
         assert_eq!(format!("{}", negative), "-1");
+    }
+
+    #[test]
+    fn test_parse_binary_expr() {
+        let doc = "
+        1 + 2 * 4 - 5 / 3 > 6 | 1 & 0
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let negative = parser.parse_expr();
+        assert_eq!(
+            format!("{}", negative),
+            "((((1 + (2 * 4)) - (5 / 3)) > 6) & (1 & 0))"
+        );
+    }
+
+    #[test]
+    fn test_parse_expr() {
+        let doc = "
+        1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "1");
     }
 }
