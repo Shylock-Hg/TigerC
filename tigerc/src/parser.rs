@@ -254,7 +254,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::Parser;
-    use crate::tokenizer::{debug_token_stream, tokenize};
+    use crate::tokenizer::tokenize;
 
     #[test]
     fn test_parser_new() {
