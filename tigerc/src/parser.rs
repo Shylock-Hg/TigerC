@@ -49,6 +49,18 @@ impl Parser {
         self.cursor.peek()
     }
 
+    // return true we look expected token
+    fn look_expect(&mut self, expect: &Token) -> bool {
+        self.look().map(|tok| tok.node() == expect).unwrap_or(false)
+    }
+
+    // return true we look expected keyword
+    fn look_expect_keyword(&mut self, expect: &Symbol) -> bool {
+        self.look()
+            .map(|tok| matches!(tok.node(), Token::Ident(s) if s == expect))
+            .unwrap_or(false)
+    }
+
     fn eat_keyword(&mut self, keyword: Symbol) {
         self.eat_expect(Token::Ident(keyword));
     }
@@ -227,6 +239,25 @@ impl Parser {
             Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
             Token::Str(s) => ast::Expr::Literal(ast::Value::Str(s.clone())),
             Token::Ident(s) => {
+                match s {
+                    v if v == &kw::TOK_IF => {
+                        let condition = self.parse_expr();
+                        self.eat_keyword(kw::TOK_THEN);
+                        let then = self.parse_expr();
+                        return if self.look_expect_keyword(&kw::TOK_ELSE) {
+                            self.bump();
+                            let else_ = self.parse_expr();
+                            ast::Expr::IfThenElse(ast::IfThenElseExpr {
+                                condition: Box::new(condition),
+                                then: Box::new(then),
+                                el: Box::new(else_),
+                            })
+                        } else {
+                            ast::Expr::IfThen(Box::new(condition), Box::new(then))
+                        };
+                    }
+                    _ => (),
+                };
                 let next = self.look().unwrap();
                 match next.node() {
                     Token::OpenParen => {
@@ -813,6 +844,35 @@ mod tests {
         let expected = ast::Expr::Assign(
             ast::LeftValue::Variable(ident_pool::create_symbol("a")),
             Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+        );
+        assert_eq!(e, expected);
+    }
+
+    fn test_if_expr() {
+        let doc = "
+        if 1 then 2 else 3
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::IfThenElse(ast::IfThenElseExpr {
+            condition: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            then: Box::new(ast::Expr::Literal(ast::Value::Int(2))),
+            el: Box::new(ast::Expr::Literal(ast::Value::Int(3))),
+        });
+        assert_eq!(e, expected);
+    }
+
+    fn test_if_2_expr() {
+        let doc = "
+        if 1 then 2
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::IfThen(
+            Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            Box::new(ast::Expr::Literal(ast::Value::Int(2))),
         );
         assert_eq!(e, expected);
     }

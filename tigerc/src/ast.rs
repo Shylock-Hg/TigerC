@@ -129,9 +129,9 @@ impl Display for ArrayExpr {
 // "if" expr "then" expr "else" expr
 #[derive(Debug, PartialEq, Eq)]
 pub struct IfThenElseExpr {
-    condition: Box<Expr>,
-    then: Box<Expr>,
-    el: Box<Expr>,
+    pub condition: Box<Expr>,
+    pub then: Box<Expr>,
+    pub el: Box<Expr>,
 }
 
 impl Display for IfThenElseExpr {

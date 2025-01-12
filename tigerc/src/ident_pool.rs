@@ -15,6 +15,9 @@ symbols! {
         TOK_NIL: "nil",
         TOK_VAR: "var",
         TOK_FUNCTION: "function",
+        TOK_IF: "if",
+        TOK_THEN: "then",
+        TOK_ELSE: "else",
     }
 }
 
