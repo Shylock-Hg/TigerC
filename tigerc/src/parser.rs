@@ -517,6 +517,20 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_minus_unary_minus_mixed_expr() {
+        let doc = "
+        -1 + 2 * 4 - - 5 / -3 > 6 | 1 & 0
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let negative = parser.parse_expr();
+        assert_eq!(
+            format!("{}", negative),
+            "((((-1 + (2 * 4)) - (-5 / -3)) > 6) & (1 & 0))"
+        );
+    }
+
+    #[test]
     fn test_parse_expr() {
         let doc = "
         1
