@@ -5,12 +5,13 @@ use crate::tokenizer::{Posed, Token};
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum Precedence {
     Lowest = 0,
-    Or = 1,             // |
-    And = 2,            // &
-    Compare = 3,        // ==, !=, <=, >=, <, >
-    PlusMinus = 4,      // +, -
-    MultiplyDivide = 5, // *, /
-    Prefix = 6,         // -
+    Assign = 1,
+    Or = 2,             // |
+    And = 3,            // &
+    Compare = 4,        // ==, !=, <=, >=, <, >
+    PlusMinus = 5,      // +, -
+    MultiplyDivide = 6, // *, /
+    Prefix = 7,         // -
 }
 
 impl Precedence {
@@ -23,6 +24,7 @@ impl Precedence {
             }
             Token::Plus | Token::Minus => Precedence::PlusMinus,
             Token::Star | Token::Slash => Precedence::MultiplyDivide,
+            Token::Assign => Precedence::Assign,
             _ => Precedence::Lowest,
         }
     }
@@ -244,17 +246,36 @@ impl Parser {
                         self.bump();
                         let len = self.parse_expr();
                         self.eat_expect(Token::CloseBracket);
-                        self.eat_keyword(kw::TOK_OF);
-                        let init = self.parse_expr();
-                        ast::Expr::ArrayExpr(ast::ArrayExpr {
-                            ty: *s,
-                            len: Box::new(len),
-                            init: Box::new(init),
-                        })
+                        let n = self.look().to_owned().unwrap();
+                        match n.node() {
+                            Token::Ident(kw::TOK_OF) => {
+                                self.bump();
+                                let init = self.parse_expr();
+                                ast::Expr::ArrayExpr(ast::ArrayExpr {
+                                    ty: *s,
+                                    len: Box::new(len),
+                                    init: Box::new(init),
+                                })
+                            }
+                            _ => {
+                                let lv = ast::LeftValue::Subscript(
+                                    Box::new(ast::LeftValue::Variable(*s)),
+                                    Box::new(len),
+                                );
+                                ast::Expr::LeftValue(self.parse_left_value_suffix(lv))
+                            }
+                        }
                     }
                     _ => {
                         let prev = ast::LeftValue::Variable(*s);
-                        ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
+                        let lv = self.parse_left_value_suffix(prev);
+                        if self.look().unwrap().node() == &Token::Assign {
+                            self.bump();
+                            let rhs = self.parse_expr();
+                            ast::Expr::Assign(lv, Box::new(rhs))
+                        } else {
+                            ast::Expr::LeftValue(lv)
+                        }
                     }
                 }
             }
@@ -276,33 +297,73 @@ impl Parser {
 
     fn parse_expr_suffix(&mut self, left: ast::Expr, precedence: Precedence) -> ast::Expr {
         let look = self.bump().unwrap();
-        ast::Expr::Binary(match look.node() {
-            Token::Plus => {
-                ast::Binary::Add(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+        match look.node() {
+            Token::Plus => ast::Expr::Binary(ast::Binary::Add(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Minus => ast::Expr::Binary(ast::Binary::Minus(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Star => ast::Expr::Binary(ast::Binary::Multiply(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Slash => ast::Expr::Binary(ast::Binary::Divide(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Eq => ast::Expr::Binary(ast::Binary::Eq(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Ne => ast::Expr::Binary(ast::Binary::Ne(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Le => ast::Expr::Binary(ast::Binary::Le(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Ge => ast::Expr::Binary(ast::Binary::Ge(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Lt => ast::Expr::Binary(ast::Binary::Lt(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Gt => ast::Expr::Binary(ast::Binary::Gt(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::And => ast::Expr::Binary(ast::Binary::And(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Or => ast::Expr::Binary(ast::Binary::And(
+                Box::new(left),
+                Box::new(self.parse_sub_expr(precedence)),
+            )),
+            Token::Assign => {
+                if let ast::Expr::LeftValue(lv) = left {
+                    ast::Expr::Assign(lv, Box::new(self.parse_sub_expr(precedence)))
+                } else {
+                    panic!("Only left value is allowed in left of assignment.")
+                }
             }
-            Token::Minus => {
-                ast::Binary::Minus(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
-            }
-            Token::Star => {
-                ast::Binary::Multiply(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
-            }
-            Token::Slash => {
-                ast::Binary::Divide(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
-            }
-            Token::Eq => ast::Binary::Eq(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::Ne => ast::Binary::Ne(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::Le => ast::Binary::Le(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::Ge => ast::Binary::Ge(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::Lt => ast::Binary::Lt(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::Gt => ast::Binary::Gt(Box::new(left), Box::new(self.parse_sub_expr(precedence))),
-            Token::And => {
-                ast::Binary::And(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
-            }
-            Token::Or => {
-                ast::Binary::And(Box::new(left), Box::new(self.parse_sub_expr(precedence)))
+            Token::Dot => {
+                if let ast::Expr::LeftValue(lv) = left {
+                    let ident = self.eat_ident();
+                    let lv = ast::LeftValue::Field(Box::new(lv), ident);
+                    self.parse_expr_suffix(ast::Expr::LeftValue(lv), precedence)
+                } else {
+                    panic!("Only left value is allowed in left of assignment.")
+                }
             }
             _ => unreachable!(),
-        })
+        }
     }
 
     fn parse_decl(&mut self) -> ast::Decl {
@@ -714,5 +775,38 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         assert_eq!(format!("{}", e), "int[3] of 1");
+    }
+
+    #[test]
+    fn test_assign_expr() {
+        let doc = "
+        a[3] := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "a[3] := 1");
+    }
+
+    #[test]
+    fn test_assign_1_expr() {
+        let doc = "
+        a[3].b := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "a[3].b := 1");
+    }
+
+    #[test]
+    fn test_assign_2_expr() {
+        let doc = "
+        a := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "a := 1");
     }
 }
