@@ -33,7 +33,7 @@ impl Display for Value {
             Value::Nothing => write!(f, "()"),
             Value::Nil => write!(f, "nil"),
             Value::Int(i) => write!(f, "{}", i),
-            Value::Str(s) => write!(f, "{}", s),
+            Value::Str(s) => write!(f, "\"{}\"", s),
         }
     }
 }

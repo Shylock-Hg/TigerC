@@ -114,7 +114,7 @@ impl Parser {
         }
     }
 
-    // "(" <expr> ";" <expr>; ... <expr>")"
+    // [";" <expr>; ... <expr>"])"
     fn parse_sequence_suffix(&mut self, v: &mut Vec<ast::Expr>) {
         loop {
             match self.look().unwrap().node() {
@@ -129,6 +129,25 @@ impl Parser {
                 _ => Self::unexpected_token(self.look().unwrap()),
             }
         }
+    }
+
+    // [<expr>, <expr>, ...] ")"
+    fn parse_function_arguments_suffix(&mut self) -> Vec<ast::Expr> {
+        let mut args = vec![];
+        loop {
+            let next = self.look().unwrap();
+            match next.node() {
+                Token::CloseParen => {
+                    self.bump();
+                    break;
+                }
+                Token::Comma => {
+                    self.bump();
+                }
+                _ => args.push(self.parse_expr()),
+            }
+        }
+        args
     }
 
     fn parse_expr(&mut self) -> ast::Expr {
@@ -160,8 +179,18 @@ impl Parser {
             Token::Number(n) => ast::Expr::Literal(ast::Value::Int(*n)),
             Token::Str(s) => ast::Expr::Literal(ast::Value::Str(s.clone())),
             Token::Ident(s) => {
-                let prev = ast::LeftValue::Variable(*s);
-                ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
+                let next = self.look().unwrap();
+                match next.node() {
+                    Token::OpenParen => {
+                        self.bump();
+                        let args = self.parse_function_arguments_suffix();
+                        ast::Expr::FuncCall(*s, args)
+                    }
+                    _ => {
+                        let prev = ast::LeftValue::Variable(*s);
+                        ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
+                    }
+                }
             }
             Token::OpenParen => {
                 let expr = self.parse_expr();
@@ -539,5 +568,38 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         assert_eq!(format!("{}", e), "1");
+    }
+
+    #[test]
+    fn test_func_call_expr() {
+        let doc = "
+        funcName(1, 2, 3)
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "funcName(1, 2, 3)");
+    }
+
+    #[test]
+    fn test_func_call_1_expr() {
+        let doc = "
+        funcName(\"hello\")
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "funcName(\"hello\")");
+    }
+
+    #[test]
+    fn test_func_call_0_expr() {
+        let doc = "
+        funcName()
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "funcName()");
     }
 }
