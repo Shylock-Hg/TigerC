@@ -240,6 +240,18 @@ impl Parser {
                             init: field_inits,
                         })
                     }
+                    Token::OpenBracket => {
+                        self.bump();
+                        let len = self.parse_expr();
+                        self.eat_expect(Token::CloseBracket);
+                        self.eat_keyword(kw::TOK_OF);
+                        let init = self.parse_expr();
+                        ast::Expr::ArrayExpr(ast::ArrayExpr {
+                            ty: *s,
+                            len: Box::new(len),
+                            init: Box::new(init),
+                        })
+                    }
                     _ => {
                         let prev = ast::LeftValue::Variable(*s);
                         ast::Expr::LeftValue(self.parse_left_value_suffix(prev))
@@ -691,5 +703,16 @@ mod tests {
             format!("{}", e),
             "RecordName {field0 = 1, field1 = 2, field3 = 3}"
         );
+    }
+
+    #[test]
+    fn test_array_construct_expr() {
+        let doc = "
+        int[3] of 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "int[3] of 1");
     }
 }

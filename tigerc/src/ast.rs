@@ -110,18 +110,18 @@ impl Display for RecordExpr {
     }
 }
 
-// ArrayExpr => <ident> [expr] of expr
+// ArrayExpr => <ident> "[" <expr> "]" "of" <expr>
 #[derive(Debug)]
 pub struct ArrayExpr {
     // element type
-    ty: Symbol,
-    len: Box<Expr>,
-    init: Box<Expr>,
+    pub ty: Symbol,
+    pub len: Box<Expr>,
+    pub init: Box<Expr>,
 }
 
 impl Display for ArrayExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} [{}]", self.ty, self.len)?;
+        write!(f, "{}[{}]", self.ty, self.len)?;
         write!(f, " of {}", self.init)
     }
 }
