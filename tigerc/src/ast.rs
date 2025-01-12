@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::ident_pool::Symbol;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Ast {
     Decl(Decl),
     Expr(Expr),
@@ -17,7 +17,7 @@ impl Display for Ast {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Value {
     // nothing, e.g. `()`
     Nothing,
@@ -38,7 +38,7 @@ impl Display for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Unary {
     Negative(Box<Expr>),
 }
@@ -51,7 +51,7 @@ impl Display for Unary {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Binary {
     Add(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
@@ -91,7 +91,7 @@ impl Display for Binary {
 }
 
 // RecordExpr => <ident> "{" [<ident> "=" expr, ...] "}"
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RecordExpr {
     pub ty: Symbol,
     pub init: Vec<(Symbol, Expr)>,
@@ -111,7 +111,7 @@ impl Display for RecordExpr {
 }
 
 // ArrayExpr => <ident> "[" <expr> "]" "of" <expr>
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ArrayExpr {
     // element type
     pub ty: Symbol,
@@ -127,7 +127,7 @@ impl Display for ArrayExpr {
 }
 
 // "if" expr "then" expr "else" expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IfThenElseExpr {
     condition: Box<Expr>,
     then: Box<Expr>,
@@ -145,7 +145,7 @@ impl Display for IfThenElseExpr {
 }
 
 // "if" expr "then" expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IfThen {
     condition: Box<Expr>,
     then: Box<Expr>,
@@ -158,7 +158,7 @@ impl Display for IfThen {
 }
 
 // "while" expr "do" expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct While {
     condition: Box<Expr>,
     body: Box<Expr>,
@@ -171,7 +171,7 @@ impl Display for While {
 }
 
 // "for" <ident> ":=" expr "to" expr "do" expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct For {
     local: Symbol,
     lower: Box<Expr>,
@@ -190,7 +190,7 @@ impl Display for For {
 }
 
 // "let" decls "in" expr[;expr...] "end"
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Let {
     decls: Vec<Decl>,
     sequence: Vec<Expr>,
@@ -216,7 +216,7 @@ impl Display for Let {
 // lvalue => <ident>
 //        => lvalue "." <ident>
 //        => lvalue "[" expr "]"
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum LeftValue {
     Variable(Symbol),
     Field(Box<LeftValue>, Symbol),
@@ -233,7 +233,7 @@ impl Display for LeftValue {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
     Literal(Value),
     LeftValue(LeftValue),
@@ -244,7 +244,7 @@ pub enum Expr {
     FuncCall(Symbol, Vec<Expr>),
     RecordExpr(RecordExpr),
     ArrayExpr(ArrayExpr),
-    Assign(Symbol, Box<Expr>),
+    Assign(LeftValue, Box<Expr>),
     IfThenElse(IfThenElseExpr),
     IfThen(Box<Expr>, Box<Expr>),
     While(While),
@@ -298,7 +298,7 @@ impl Display for Expr {
 // Decl => TypeDecl
 //      => VarDecl
 //      => FuncDecl
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Decl {
     Type(TypeDecl),
     Var(VarDecl),
@@ -317,7 +317,7 @@ impl Display for Decl {
 
 // VarDecl => "var" <ident> ":=" expr
 //         => "var" <ident> ":" <ident> := expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct VarDecl {
     pub name: Symbol,
     pub ty: Option<Symbol>,
@@ -335,7 +335,7 @@ impl Display for VarDecl {
 
 // FuncDecl => "function" <ident> "(" TypeFields ")" "=" expr
 //          => "function" <ident> "(" TypeFields ")" ":" <ident> "=" expr
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct FuncDecl {
     pub name: Symbol,
     pub args: Vec<Field>,
@@ -366,7 +366,7 @@ impl Display for FuncDecl {
 //    => "array" "of" IDENT
 // TypeFields => %empty
 //            => IDENT: IDENT [, IDENT: IDENT...]
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TypeDecl {
     pub type_name: Symbol,
     pub ty: Ty,
@@ -378,7 +378,7 @@ impl Display for TypeDecl {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Ty {
     Name(Symbol),
     Struct(TyStruct),
@@ -395,7 +395,7 @@ impl Display for Ty {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TyStruct(pub Vec<Field>);
 
 impl Display for TyStruct {
@@ -411,7 +411,7 @@ impl Display for TyStruct {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Field {
     pub name: Symbol,
     pub ty: Symbol,
