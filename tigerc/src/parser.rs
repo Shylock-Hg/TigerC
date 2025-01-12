@@ -114,7 +114,7 @@ impl Parser {
         }
     }
 
-    // [";" <expr>; ... <expr>"])"
+    // [";" <expr>; ... <expr>] ")"
     fn parse_sequence_suffix(&mut self, v: &mut Vec<ast::Expr>) {
         loop {
             match self.look().unwrap().node() {
