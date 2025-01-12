@@ -79,6 +79,7 @@ impl Parser {
         }
     }
 
+    // [<ident> ":" <ident> "," <ident> ":" <ident> ...]
     fn eat_field_list(&mut self) -> Vec<ast::Field> {
         let mut fields = vec![];
         while let Some(field) = self.eat_field() {
@@ -90,6 +91,51 @@ impl Parser {
             }
         }
         fields
+    }
+
+    fn eat_field_init(&mut self) -> (Symbol, ast::Expr) {
+        let field_name = self.eat_ident();
+        self.eat_expect(Token::Eq);
+        let init = self.parse_expr();
+        (field_name, init)
+    }
+
+    // [<ident> "=" <ident> "," <ident> "=" <ident>...] "}"
+    fn eat_field_init_list_suffix(&mut self) -> Vec<(Symbol, ast::Expr)> {
+        self.eat_token_separated_list_suffix(
+            &Token::Comma,
+            &Token::CloseBrace,
+            Self::eat_field_init,
+        )
+    }
+
+    // [ <T> "sep" <T> ...  ] "end"
+    fn eat_token_separated_list_suffix<T, F>(
+        &mut self,
+        sep: &Token,
+        end: &Token,
+        mut f: F,
+    ) -> Vec<T>
+    where
+        F: FnMut(&mut Parser) -> T,
+    {
+        let mut v = vec![];
+        loop {
+            let current = self.look().unwrap();
+            match current.node() {
+                tok if tok == end => {
+                    self.bump();
+                    break;
+                }
+                _ => {
+                    v.push(f(self));
+                    if self.look().unwrap().node() == sep {
+                        self.bump();
+                    }
+                }
+            }
+        }
+        v
     }
 
     // "." <ident>
@@ -185,6 +231,14 @@ impl Parser {
                         self.bump();
                         let args = self.parse_function_arguments_suffix();
                         ast::Expr::FuncCall(*s, args)
+                    }
+                    Token::OpenBrace => {
+                        self.bump();
+                        let field_inits = self.eat_field_init_list_suffix();
+                        ast::Expr::RecordExpr(ast::RecordExpr {
+                            ty: *s,
+                            init: field_inits,
+                        })
                     }
                     _ => {
                         let prev = ast::LeftValue::Variable(*s);
@@ -601,5 +655,41 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         assert_eq!(format!("{}", e), "funcName()");
+    }
+
+    #[test]
+    fn test_record_construct_0_expr() {
+        let doc = "
+        RecordName{}
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "RecordName {}");
+    }
+
+    #[test]
+    fn test_record_construct_1_expr() {
+        let doc = "
+        RecordName{field0 = 1}
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(format!("{}", e), "RecordName {field0 = 1}");
+    }
+
+    #[test]
+    fn test_record_construct_expr() {
+        let doc = "
+        RecordName{field0 = 1, field1 = 2, field3 = 3}
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        assert_eq!(
+            format!("{}", e),
+            "RecordName {field0 = 1, field1 = 2, field3 = 3}"
+        );
     }
 }

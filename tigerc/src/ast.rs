@@ -93,8 +93,8 @@ impl Display for Binary {
 // RecordExpr => <ident> "{" [<ident> "=" expr, ...] "}"
 #[derive(Debug)]
 pub struct RecordExpr {
-    ty: Symbol,
-    init: Vec<(Symbol, Expr)>,
+    pub ty: Symbol,
+    pub init: Vec<(Symbol, Expr)>,
 }
 
 impl Display for RecordExpr {
