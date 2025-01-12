@@ -353,15 +353,6 @@ impl Parser {
                     panic!("Only left value is allowed in left of assignment.")
                 }
             }
-            Token::Dot => {
-                if let ast::Expr::LeftValue(lv) = left {
-                    let ident = self.eat_ident();
-                    let lv = ast::LeftValue::Field(Box::new(lv), ident);
-                    self.parse_expr_suffix(ast::Expr::LeftValue(lv), precedence)
-                } else {
-                    panic!("Only left value is allowed in left of assignment.")
-                }
-            }
             _ => unreachable!(),
         }
     }
