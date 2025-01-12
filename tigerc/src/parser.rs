@@ -494,6 +494,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::Parser;
+    use crate::ast;
+    use crate::ident_pool;
     use crate::tokenizer::tokenize;
 
     #[test]
@@ -808,5 +810,19 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         assert_eq!(format!("{}", e), "a := 1");
+    }
+
+    fn test_assign_3_expr() {
+        let doc = "
+        a := 1
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::Assign(
+            ast::LeftValue::Variable(ident_pool::create_symbol("a")),
+            Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+        );
+        assert_eq!(e, expected);
     }
 }
