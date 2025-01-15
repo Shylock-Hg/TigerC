@@ -160,8 +160,8 @@ impl Display for IfThen {
 // "while" expr "do" expr
 #[derive(Debug, PartialEq, Eq)]
 pub struct While {
-    condition: Box<Expr>,
-    body: Box<Expr>,
+    pub condition: Box<Expr>,
+    pub body: Box<Expr>,
 }
 
 impl Display for While {

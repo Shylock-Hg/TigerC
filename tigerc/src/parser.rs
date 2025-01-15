@@ -256,6 +256,15 @@ impl Parser {
                             ast::Expr::IfThen(Box::new(condition), Box::new(then))
                         };
                     }
+                    v if v == &kw::TOK_WHILE => {
+                        let condition = self.parse_expr();
+                        self.eat_keyword(kw::TOK_DO);
+                        let body = self.parse_expr();
+                        return ast::Expr::While(ast::While {
+                            condition: Box::new(condition),
+                            body: Box::new(body),
+                        });
+                    }
                     _ => (),
                 };
                 let next = self.look().unwrap();
@@ -891,6 +900,23 @@ mod tests {
             )),
             then: Box::new(ast::Expr::Literal(ast::Value::Int(2))),
             el: Box::new(ast::Expr::Literal(ast::Value::Int(3))),
+        });
+        assert_eq!(e, expected);
+    }
+
+    fn test_while_expr() {
+        let doc = "
+        while 1 do var1 := 3
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::While(ast::While {
+            condition: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            body: Box::new(ast::Expr::Assign(
+                ast::LeftValue::Variable(ident_pool::create_symbol("var1")),
+                Box::new(ast::Expr::Literal(ast::Value::Int(3))),
+            )),
         });
         assert_eq!(e, expected);
     }

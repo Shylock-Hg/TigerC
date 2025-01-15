@@ -18,6 +18,8 @@ symbols! {
         TOK_IF: "if",
         TOK_THEN: "then",
         TOK_ELSE: "else",
+        TOK_WHILE: "while",
+        TOK_DO: "do",
     }
 }
 
