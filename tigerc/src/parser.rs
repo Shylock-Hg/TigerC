@@ -876,4 +876,22 @@ mod tests {
         );
         assert_eq!(e, expected);
     }
+
+    fn test_if_nested_expr() {
+        let doc = "
+        if if 1 then 2 then 2 else 3
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::IfThenElse(ast::IfThenElseExpr {
+            condition: Box::new(ast::Expr::IfThen(
+                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                Box::new(ast::Expr::Literal(ast::Value::Int(2))),
+            )),
+            then: Box::new(ast::Expr::Literal(ast::Value::Int(2))),
+            el: Box::new(ast::Expr::Literal(ast::Value::Int(3))),
+        });
+        assert_eq!(e, expected);
+    }
 }
