@@ -377,11 +377,17 @@ impl Parser {
             }
             Token::OpenParen => {
                 let expr = self.parse_expr();
-                self.eat_expect(Token::SemiColon);
-                let expr2 = self.parse_expr();
-                let mut v = vec![expr, expr2];
-                self.parse_sequence_suffix(&mut v);
-                ast::Expr::Sequence(v)
+                let next = self.bump().unwrap();
+                if next.node() == &Token::CloseParen {
+                    ast::Expr::Parenthesis(Box::new(expr))
+                } else if next.node() == &Token::SemiColon {
+                    let expr2 = self.parse_expr();
+                    let mut v = vec![expr, expr2];
+                    self.parse_sequence_suffix(&mut v);
+                    ast::Expr::Sequence(v)
+                } else {
+                    Self::unexpected_token(&next);
+                }
             }
             Token::Minus => {
                 let expr = self.parse_expr_prefix();
@@ -1041,6 +1047,23 @@ mod tests {
                 ast::Expr::Literal(ast::Value::Str("hello".to_string())),
             ],
         });
+        assert_eq!(e, expected);
+    }
+
+    fn test_parenthesis_expr() {
+        let doc = "
+        (1+1)*2
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::Binary(ast::Binary::Multiply(
+            Box::new(ast::Expr::Binary(ast::Binary::Add(
+                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            ))),
+            Box::new(ast::Expr::Literal(ast::Value::Int(2))),
+        ));
         assert_eq!(e, expected);
     }
 }
