@@ -22,6 +22,7 @@ symbols! {
         TOK_DO: "do",
         TOK_FOR: "for",
         TOK_TO: "to",
+        TOK_BREAK: "break",
     }
 }
 

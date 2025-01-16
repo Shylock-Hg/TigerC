@@ -280,6 +280,9 @@ impl Parser {
                             body: Box::new(body),
                         });
                     }
+                    v if v == &kw::TOK_BREAK => {
+                        return ast::Expr::Break;
+                    }
                     _ => (),
                 };
                 let next = self.look().unwrap();
@@ -952,6 +955,17 @@ mod tests {
                 Box::new(ast::Expr::Literal(ast::Value::Int(3))),
             )),
         });
+        assert_eq!(e, expected);
+    }
+
+    fn test_break_expr() {
+        let doc = "
+        break
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::Break;
         assert_eq!(e, expected);
     }
 }
