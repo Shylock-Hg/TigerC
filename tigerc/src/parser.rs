@@ -265,6 +265,21 @@ impl Parser {
                             body: Box::new(body),
                         });
                     }
+                    v if v == &kw::TOK_FOR => {
+                        let local = self.eat_ident();
+                        self.eat_expect(Token::Assign);
+                        let lower = self.parse_expr();
+                        self.eat_keyword(kw::TOK_TO);
+                        let upper = self.parse_expr();
+                        self.eat_keyword(kw::TOK_DO);
+                        let body = self.parse_expr();
+                        return ast::Expr::For(ast::For {
+                            local,
+                            lower: Box::new(lower),
+                            upper: Box::new(upper),
+                            body: Box::new(body),
+                        });
+                    }
                     _ => (),
                 };
                 let next = self.look().unwrap();
@@ -913,6 +928,25 @@ mod tests {
         let e = parser.parse_expr();
         let expected = ast::Expr::While(ast::While {
             condition: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            body: Box::new(ast::Expr::Assign(
+                ast::LeftValue::Variable(ident_pool::create_symbol("var1")),
+                Box::new(ast::Expr::Literal(ast::Value::Int(3))),
+            )),
+        });
+        assert_eq!(e, expected);
+    }
+
+    fn test_for_expr() {
+        let doc = "
+        for it := 1 to 10 do var1 := 3
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::For(ast::For {
+            local: ident_pool::create_symbol("it"),
+            lower: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+            upper: Box::new(ast::Expr::Literal(ast::Value::Int(10))),
             body: Box::new(ast::Expr::Assign(
                 ast::LeftValue::Variable(ident_pool::create_symbol("var1")),
                 Box::new(ast::Expr::Literal(ast::Value::Int(3))),

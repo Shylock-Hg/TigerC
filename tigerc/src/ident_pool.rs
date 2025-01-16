@@ -20,6 +20,8 @@ symbols! {
         TOK_ELSE: "else",
         TOK_WHILE: "while",
         TOK_DO: "do",
+        TOK_FOR: "for",
+        TOK_TO: "to",
     }
 }
 

@@ -173,10 +173,10 @@ impl Display for While {
 // "for" <ident> ":=" expr "to" expr "do" expr
 #[derive(Debug, PartialEq, Eq)]
 pub struct For {
-    local: Symbol,
-    lower: Box<Expr>,
-    upper: Box<Expr>,
-    body: Box<Expr>,
+    pub local: Symbol,
+    pub lower: Box<Expr>,
+    pub upper: Box<Expr>,
+    pub body: Box<Expr>,
 }
 
 impl Display for For {
