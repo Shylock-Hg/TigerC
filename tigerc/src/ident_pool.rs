@@ -23,6 +23,9 @@ symbols! {
         TOK_FOR: "for",
         TOK_TO: "to",
         TOK_BREAK: "break",
+        TOK_LET: "let",
+        TOK_IN: "in",
+        TOK_END: "end",
     }
 }
 

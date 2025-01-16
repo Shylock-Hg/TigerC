@@ -1,3 +1,5 @@
+use std::result;
+
 use crate::ast;
 use crate::ident_pool::{kw, Symbol};
 use crate::tokenizer::{Posed, Token};
@@ -30,9 +32,30 @@ impl Precedence {
     }
 }
 
+#[derive(Debug)]
+pub struct ParserError {
+    pub message: String,
+}
+
+impl ParserError {
+    pub fn unexpected_token(tok: &Posed<Token>) -> Self {
+        Self {
+            message: format!("unexpected token: {:?}", tok),
+        }
+    }
+}
+
+impl std::fmt::Display for ParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
 pub struct Parser {
     cursor: std::iter::Peekable<Box<dyn Iterator<Item = Posed<Token>>>>,
 }
+
+type Result<T> = result::Result<T, ParserError>;
 
 impl Parser {
     pub fn new(cursor: Box<dyn Iterator<Item = Posed<Token>>>) -> Self {
@@ -120,6 +143,15 @@ impl Parser {
             &Token::Comma,
             &Token::CloseBrace,
             Self::eat_field_init,
+        )
+    }
+
+    // expr[; expr...] "end"
+    fn eat_expr_list_end_suffix(&mut self) -> Vec<ast::Expr> {
+        self.eat_token_separated_list_suffix(
+            &Token::SemiColon,
+            &Token::Ident(kw::TOK_END),
+            Self::parse_expr,
         )
     }
 
@@ -283,6 +315,12 @@ impl Parser {
                     v if v == &kw::TOK_BREAK => {
                         return ast::Expr::Break;
                     }
+                    v if v == &kw::TOK_LET => {
+                        let decls = self.parse_decl_list();
+                        self.eat_keyword(kw::TOK_IN);
+                        let sequence = self.eat_expr_list_end_suffix();
+                        return ast::Expr::Let(ast::Let { decls, sequence });
+                    }
                     _ => (),
                 };
                 let next = self.look().unwrap();
@@ -415,18 +453,26 @@ impl Parser {
         }
     }
 
-    fn parse_decl(&mut self) -> ast::Decl {
+    fn parse_decl_list(&mut self) -> Vec<ast::Decl> {
+        let mut decls = vec![];
+        while let Ok(d) = self.parse_decl() {
+            decls.push(d);
+        }
+        decls
+    }
+
+    fn parse_decl(&mut self) -> Result<ast::Decl> {
         let current = self.look().unwrap();
         match current.node() {
             Token::Ident(s) => match s {
-                &kw::TOK_TYPE => ast::Decl::Type(self.parse_type_decl()),
-                &kw::TOK_VAR => ast::Decl::Var(self.parse_var_decl()),
+                &kw::TOK_TYPE => Ok(ast::Decl::Type(self.parse_type_decl())),
+                &kw::TOK_VAR => Ok(ast::Decl::Var(self.parse_var_decl())),
                 &kw::TOK_FUNCTION => {
                     unimplemented!()
                 }
-                _ => Self::unexpected_token(current),
+                _ => Err(ParserError::unexpected_token(current)),
             },
-            _ => Self::unexpected_token(current),
+            _ => Err(ParserError::unexpected_token(current)),
         }
     }
 
@@ -640,7 +686,7 @@ mod tests {
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
-        let _decl = parser.parse_decl();
+        let _decl = parser.parse_decl().unwrap();
     }
 
     #[test]
@@ -966,6 +1012,37 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         let expected = ast::Expr::Break;
+        assert_eq!(e, expected);
+    }
+
+    fn test_let_expr() {
+        let doc = "
+        let var b := 1 type t1 = t2 in 1; 1+1; \"hello\" end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
+        let expected = ast::Expr::Let(ast::Let {
+            decls: vec![
+                ast::Decl::Var(ast::VarDecl {
+                    name: ident_pool::create_symbol("b"),
+                    ty: None,
+                    init: ast::Expr::Literal(ast::Value::Int(1)),
+                }),
+                ast::Decl::Type(ast::TypeDecl {
+                    type_name: ident_pool::create_symbol("t1"),
+                    ty: ast::Ty::Name(ident_pool::create_symbol("t2")),
+                }),
+            ],
+            sequence: vec![
+                ast::Expr::Literal(ast::Value::Int(1)),
+                ast::Expr::Binary(ast::Binary::Add(
+                    Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                    Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                )),
+                ast::Expr::Literal(ast::Value::Str("hello".to_string())),
+            ],
+        });
         assert_eq!(e, expected);
     }
 }

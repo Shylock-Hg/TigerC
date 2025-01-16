@@ -192,8 +192,8 @@ impl Display for For {
 // "let" decls "in" expr[;expr...] "end"
 #[derive(Debug, PartialEq, Eq)]
 pub struct Let {
-    decls: Vec<Decl>,
-    sequence: Vec<Expr>,
+    pub decls: Vec<Decl>,
+    pub sequence: Vec<Expr>,
 }
 
 impl Display for Let {
