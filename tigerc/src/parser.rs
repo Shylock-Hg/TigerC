@@ -51,16 +51,24 @@ impl std::fmt::Display for ParserError {
     }
 }
 
-pub struct Parser {
-    cursor: std::iter::Peekable<Box<dyn Iterator<Item = Posed<Token>>>>,
+pub struct Parser<'a> {
+    cursor: std::iter::Peekable<Box<dyn Iterator<Item = Posed<Token>> + 'a>>,
 }
 
 type Result<T> = result::Result<T, ParserError>;
 
-impl Parser {
-    pub fn new(cursor: Box<dyn Iterator<Item = Posed<Token>>>) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(cursor: Box<dyn Iterator<Item = Posed<Token>> + 'a>) -> Self {
         Parser {
             cursor: cursor.peekable(),
+        }
+    }
+
+    pub fn parse(&mut self) -> ast::Ast {
+        if let Ok(decl) = self.parse_decl() {
+            ast::Ast::Decl(decl)
+        } else {
+            ast::Ast::Expr(self.parse_expr())
         }
     }
 
@@ -139,11 +147,9 @@ impl Parser {
 
     // [<ident> "=" <ident> "," <ident> "=" <ident>...] "}"
     fn eat_field_init_list_suffix(&mut self) -> Vec<(Symbol, ast::Expr)> {
-        self.eat_token_separated_list_suffix(
-            &Token::Comma,
-            &Token::CloseBrace,
-            Self::eat_field_init,
-        )
+        self.eat_token_separated_list_suffix(&Token::Comma, &Token::CloseBrace, |parser| {
+            parser.eat_field_init()
+        })
     }
 
     // expr[; expr...] "end"
@@ -151,12 +157,12 @@ impl Parser {
         self.eat_token_separated_list_suffix(
             &Token::SemiColon,
             &Token::Ident(kw::TOK_END),
-            Self::parse_expr,
+            |parser| parser.parse_expr(),
         )
     }
 
     // [ <T> "sep" <T> ...  ] "end"
-    fn eat_token_separated_list_suffix<T, F>(
+    fn eat_token_separated_list_suffix<T: std::fmt::Debug, F>(
         &mut self,
         sep: &Token,
         end: &Token,
@@ -216,6 +222,7 @@ impl Parser {
                     v.push(next);
                 }
                 Token::CloseParen => {
+                    self.bump();
                     return;
                 }
                 _ => Self::unexpected_token(self.look().unwrap()),
@@ -546,6 +553,7 @@ impl Parser {
                 let look1 = self.look().unwrap();
                 match look1.node() {
                     Token::CloseBrace => {
+                        self.bump();
                         // empty fields
                         ast::Ty::Struct(ast::TyStruct(vec![]))
                     }
@@ -568,6 +576,7 @@ impl Parser {
             let look1 = self.look().unwrap();
             match look1.node() {
                 Token::CloseBrace => {
+                    self.bump();
                     return field_list;
                 }
                 Token::Comma => {

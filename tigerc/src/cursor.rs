@@ -88,7 +88,7 @@ impl<'a> Cursor<'a> {
     pub(crate) fn bump(&mut self) -> Option<char> {
         let c = self.chars.next()?;
         match c {
-            '\r' => self.inc_line(),
+            '\n' => self.inc_line(),
             '\t' => self.column += 4,
             _ => self.inc_column(),
         }

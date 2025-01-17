@@ -85,7 +85,7 @@ pub enum Token {
     Eof,
 }
 
-pub fn tokenize(content: &str) -> impl Iterator<Item = Posed<Token>> + '_ {
+pub fn tokenize<'a>(content: &'a str) -> impl Iterator<Item = Posed<Token>> + 'a {
     let mut cursor = cursor::Cursor::new(content);
     std::iter::from_fn(move || {
         let token = cursor.advance_token();
@@ -112,10 +112,9 @@ impl cursor::Cursor<'_> {
             column: self.column(),
         };
         let token = self.advance_token_();
-        if let Token::Dummy = token {
-            self.advance_token()
-        } else {
-            Posed::new(token, pos)
+        match token {
+            Token::Dummy | Token::Comment => self.advance_token(),
+            _ => Posed::new(token, pos),
         }
     }
 
