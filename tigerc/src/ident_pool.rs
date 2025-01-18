@@ -45,7 +45,7 @@ pub fn get_str(symbol: &Symbol) -> String {
     IDENT_POOL.lock().unwrap().get_str(symbol).to_owned()
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Symbol(u32);
 
 impl Debug for Symbol {
