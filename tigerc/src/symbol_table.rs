@@ -43,13 +43,10 @@ impl<V> MultiMap<V> {
     }
 
     pub fn insert(&mut self, key: Symbol, value: V) {
-        if let Some(list) = self.inner.get_mut(&key) {
-            list.push_back(value);
-        } else {
-            let mut list = LinkedList::new();
-            list.push_back(value);
-            self.inner.insert(key, list);
-        }
+        self.inner
+            .entry(key)
+            .or_insert(Default::default())
+            .push_back(value);
     }
 
     pub fn remove(&mut self, key: &Symbol) {
