@@ -135,4 +135,28 @@ mod tests {
         assert_eq!(table.get_symbol(&symbol2), None);
         assert_eq!(table.get_symbol(&symbol3), None);
     }
+
+    #[test]
+    fn test_symbol_table_shadow() {
+        let mut table = SymbolTable::new();
+        let symbol1 = ident_pool::create_symbol("s1");
+        let symbol2 = ident_pool::create_symbol("s2");
+        let symbol3 = ident_pool::create_symbol("s3");
+
+        table.begin_scope();
+        table.insert_symbol(symbol1, 1);
+        assert_eq!(table.get_symbol(&symbol1), Some(&1));
+        table.insert_symbol(symbol2, 2);
+        table.insert_symbol(symbol3, 3);
+
+        table.insert_symbol(symbol1, 3);
+        assert_eq!(table.get_symbol(&symbol1), Some(&3));
+
+        table.begin_scope();
+        table.insert_symbol(symbol3, 4);
+        assert_eq!(table.get_symbol(&symbol3), Some(&4));
+
+        table.end_scope();
+        assert_eq!(table.get_symbol(&symbol3), Some(&3))
+    }
 }
