@@ -17,7 +17,7 @@ impl Display for Ast {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Value {
     // nothing, e.g. `()`
     Nothing,
