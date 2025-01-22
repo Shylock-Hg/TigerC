@@ -650,6 +650,23 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_ne_expr() {
+        let doc = "
+       1 <> 2
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let ast = parser.parse();
+        assert_eq!(
+            ast,
+            ast::Ast::Expr(ast::Expr::Binary(ast::Binary::Ne(
+                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                Box::new(ast::Expr::Literal(ast::Value::Int(2))),
+            )))
+        );
+    }
+
+    #[test]
     fn test_parse_type_decl() {
         let doc = "
         type TypeName = Type2

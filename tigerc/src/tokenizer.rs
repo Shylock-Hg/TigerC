@@ -73,13 +73,12 @@ pub enum Token {
     Minus,        // -
     Star,         // *
     Eq,           // =
-    Ne,           // !=
+    Ne,           // <>
     Gt,           // >
     Ge,           // >=
     Lt,           // <
     Le,           // <=
     Dot,          // .
-    Bang,         // !
     Dummy,        // just placeholder
     Error(Error),
     Eof,
@@ -149,13 +148,6 @@ impl cursor::Cursor<'_> {
                 '*' => Token::Star,
                 '-' => Token::Minus,
                 '=' => Token::Eq,
-                '!' => match self.first() {
-                    '=' => {
-                        self.bump();
-                        Token::Ne
-                    }
-                    _ => Token::Bang,
-                },
                 '>' => match self.first() {
                     '=' => {
                         self.bump();
@@ -167,6 +159,10 @@ impl cursor::Cursor<'_> {
                     '=' => {
                         self.bump();
                         Token::Le
+                    }
+                    '>' => {
+                        self.bump();
+                        Token::Ne
                     }
                     _ => Token::Lt,
                 },
