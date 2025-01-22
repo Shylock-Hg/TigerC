@@ -675,6 +675,58 @@ mod tests {
     use crate::parser::Parser;
     use crate::tokenizer::tokenize;
 
+    #[test]
+    fn test_literal_nothing_type() {
+        let doc = "
+        ()
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Nothing);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_literal_nil_type() {
+        let doc = "
+        nil
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Nil);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_literal_string_type() {
+        let doc = "
+        233
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Int);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
     fn test_arithmetic_type() {
         let doc = "
         (1+1)*2
@@ -686,6 +738,74 @@ mod tests {
         let te = ti.infer(&e).unwrap();
         if let type_ast::TypeAst::TypeExpr(te) = te {
             assert_eq!(te.ty, type_ast::Type::Int);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_sequence_type() {
+        let doc = "
+        ((1+1)*2; 2; 3)
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Int);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_compare_type() {
+        let doc = "
+        3 > 2
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Int);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_compare_eq_type() {
+        let doc = "
+        let type r1 = {f1: int, f2: string} in r1{f1= 1, f2=\"hello\"} = r1{f1= 1, f2=\"hello\"} end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Int);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_let_nothing_type() {
+        let doc = "
+        let type r1 = {f1: int, f2: string} var v1 := r1{f1=1, f2=\"hello\"} in v1 := r1{f1=1, f2=\"hello\"} end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(te.ty, type_ast::Type::Nothing);
         } else {
             panic!("Unexpected decl.");
         }

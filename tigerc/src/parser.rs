@@ -181,8 +181,14 @@ impl<'a> Parser<'a> {
                 }
                 _ => {
                     v.push(f(self));
-                    if self.look().unwrap().node() == sep {
+                    let look = self.look().unwrap();
+                    if look.node() == sep {
                         self.bump();
+                    } else if look.node() == end {
+                        self.bump();
+                        return v;
+                    } else {
+                        Self::unexpected_token(&look);
                     }
                 }
             }
@@ -279,6 +285,9 @@ impl<'a> Parser<'a> {
             Token::Str(s) => ast::Expr::Literal(ast::Value::Str(s.clone())),
             Token::Ident(s) => {
                 match s {
+                    v if v == &kw::TOK_NIL => {
+                        return ast::Expr::Literal(ast::Value::Nil);
+                    }
                     v if v == &kw::TOK_IF => {
                         let condition = self.parse_expr();
                         self.eat_keyword(kw::TOK_THEN);
@@ -383,17 +392,23 @@ impl<'a> Parser<'a> {
                 }
             }
             Token::OpenParen => {
-                let expr = self.parse_expr();
-                let next = self.bump().unwrap();
-                if next.node() == &Token::CloseParen {
-                    ast::Expr::Parenthesis(Box::new(expr))
-                } else if next.node() == &Token::SemiColon {
-                    let expr2 = self.parse_expr();
-                    let mut v = vec![expr, expr2];
-                    self.parse_sequence_suffix(&mut v);
-                    ast::Expr::Sequence(v)
+                let look = self.look().unwrap();
+                if look.node() == &Token::CloseParen {
+                    self.bump();
+                    ast::Expr::Literal(ast::Value::Nothing)
                 } else {
-                    Self::unexpected_token(&next);
+                    let expr = self.parse_expr();
+                    let next = self.bump().unwrap();
+                    if next.node() == &Token::CloseParen {
+                        ast::Expr::Parenthesis(Box::new(expr))
+                    } else if next.node() == &Token::SemiColon {
+                        let expr2 = self.parse_expr();
+                        let mut v = vec![expr, expr2];
+                        self.parse_sequence_suffix(&mut v);
+                        ast::Expr::Sequence(v)
+                    } else {
+                        Self::unexpected_token(&next);
+                    }
                 }
             }
             Token::Minus => {
@@ -610,6 +625,28 @@ mod tests {
     fn test_parser_new() {
         let it = tokenize("");
         let _parser = Parser::new(Box::new(it));
+    }
+
+    #[test]
+    fn test_parse_literal_nil() {
+        let doc = "
+      nil
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let ast = parser.parse();
+        assert_eq!(ast, ast::Ast::Expr(ast::Expr::Literal(ast::Value::Nil)));
+    }
+
+    #[test]
+    fn test_parse_literal_nothing() {
+        let doc = "
+      (  )
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let ast = parser.parse();
+        assert_eq!(ast, ast::Ast::Expr(ast::Expr::Literal(ast::Value::Nothing)));
     }
 
     #[test]
@@ -1074,5 +1111,16 @@ mod tests {
             Box::new(ast::Expr::Literal(ast::Value::Int(2))),
         ));
         assert_eq!(e, expected);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_let2_expr() {
+        let doc = "
+        let type r1 = {f1: int, f2: string} in var v1 := r1{f1=1, f2=\"hello\"} end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse_expr();
     }
 }
