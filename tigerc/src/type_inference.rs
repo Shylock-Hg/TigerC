@@ -198,8 +198,15 @@ impl TypeInference {
                 }))
             }
             ast::Decl::Func(f) => {
+                // scope of function body
+                self.variable_symbol_table.begin_scope();
                 let typed_args = self.infer_field_list(&f.args);
+                for (name, ty) in typed_args.iter() {
+                    self.variable_symbol_table
+                        .insert_symbol(*name, SymbolValue { ty: ty.clone() });
+                }
                 let typed_body = self.infer_expr(&f.body)?;
+                self.variable_symbol_table.end_scope();
                 let ret_ty = f
                     .ret_ty
                     .map(|t| self.type_symbol_table.get_symbol(&t).unwrap().ty.clone())
@@ -572,8 +579,13 @@ impl TypeInference {
                 })
             }
             ast::Expr::Let(let_) => {
+                // scope of let expseq
+                self.type_symbol_table.begin_scope();
+                self.variable_symbol_table.begin_scope();
                 let ty_decls = self.infer_decl_list(&let_.decls)?;
                 let ty_expr_list = self.infer_expr_list(&let_.sequence)?;
+                self.type_symbol_table.end_scope();
+                self.variable_symbol_table.begin_scope();
                 let ty = ty_expr_list
                     .last()
                     .map(|e| e.ty.clone())
@@ -672,6 +684,7 @@ impl TypeInference {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ident_pool;
     use crate::parser::Parser;
     use crate::tokenizer::tokenize;
 
@@ -823,6 +836,40 @@ mod tests {
         let te = ti.infer(&e).unwrap();
         if let type_ast::TypeAst::TypeExpr(te) = te {
             assert_eq!(te.ty, type_ast::Type::Nothing);
+        } else {
+            panic!("Unexpected decl.");
+        }
+    }
+
+    #[test]
+    fn test_let_higher_order_function() {
+        let doc = "
+        let
+            function f(x: int) =
+                let function g(y: int) = x+y
+                in g
+                end
+        in f
+        end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        if let type_ast::TypeAst::TypeExpr(te) = te {
+            assert_eq!(
+                te.ty,
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("f"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Function(type_ast::Function {
+                        name: ident_pool::create_symbol("g"),
+                        params: vec![type_ast::Type::Int],
+                        return_ty: Box::new(type_ast::Type::Int),
+                    })),
+                })
+            );
         } else {
             panic!("Unexpected decl.");
         }
