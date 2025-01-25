@@ -5,18 +5,6 @@ use std::vec;
 use crate::ast;
 use crate::ident_pool::Symbol;
 
-macro_rules! escape {
-    ($current_depth:ident, $var_depth:ident, $current_variable:ident, $expect_variable:ident, $escape:expr) => {
-        if let Some(v) = $expect_variable {
-            if $current_depth > $var_depth && v == $current_variable {
-                if let Some(e) = &mut $escape {
-                    *e.borrow_mut() = true;
-                }
-            }
-        }
-    };
-}
-
 struct Escape {
     e: Option<Rc<RefCell<bool>>>,
 }
