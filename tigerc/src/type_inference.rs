@@ -195,15 +195,16 @@ impl TypeInference {
                     name: v.name,
                     ty,
                     init: typed_init,
+                    escape: *v.escape.borrow(),
                 }))
             }
             ast::Decl::Func(f) => {
                 // scope of function body
                 self.variable_symbol_table.begin_scope();
-                let typed_args = self.infer_field_list(&f.args);
+                let typed_args = self.infer_parameter_list(&f.args);
                 for (name, ty) in typed_args.iter() {
                     self.variable_symbol_table
-                        .insert_symbol(*name, SymbolValue { ty: ty.clone() });
+                        .insert_symbol(*name, SymbolValue { ty: ty.ty.clone() });
                 }
                 let typed_body = self.infer_expr(&f.body)?;
                 self.variable_symbol_table.end_scope();
@@ -221,7 +222,7 @@ impl TypeInference {
                             name: f.name,
                             params: typed_args
                                 .iter()
-                                .map(|(_, t)| t.clone())
+                                .map(|(_, t)| t.ty.clone())
                                 .collect::<Vec<_>>(),
                             return_ty: Box::new(ret_ty.clone()),
                         }),
@@ -679,6 +680,24 @@ impl TypeInference {
             })
             .collect::<IndexMap<_, _>>()
     }
+
+    fn infer_parameter_list(
+        &self,
+        parameters: &Vec<ast::Parameter>,
+    ) -> IndexMap<Symbol, type_ast::Parameter> {
+        parameters
+            .iter()
+            .map(|p| {
+                (
+                    p.name,
+                    type_ast::Parameter {
+                        ty: self.type_symbol_table.get_symbol(&p.ty).unwrap().ty.clone(),
+                        escape: *p.escape.borrow(),
+                    },
+                )
+            })
+            .collect::<IndexMap<_, _>>()
+    }
 }
 
 #[cfg(test)]
@@ -873,5 +892,33 @@ mod tests {
         } else {
             panic!("Unexpected decl.");
         }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_use_undefined_type() {
+        let doc = "
+        let type r1 = {f1: int, f2: string} var v1 := r2{f1=1, f2=\"hello\"} in end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let _te = ti.infer(&e).unwrap();
+    }
+    #[test]
+    #[should_panic]
+    fn test_use_out_of_scope_type() {
+        let doc = "
+        let var v := 3 in
+            let type r1 = {f1: int, f2: string} var v1 := r2{f1=1, f2=\"hello\"} in end
+            var v := r1{f1=1, f2=\"hello\"}
+        end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let _te = ti.infer(&e).unwrap();
     }
 }

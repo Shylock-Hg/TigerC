@@ -1,5 +1,7 @@
 pub mod ast;
 pub mod cursor;
+pub mod escape;
+pub mod frame;
 pub mod ident_pool;
 pub mod parser;
 pub mod symbol_table;

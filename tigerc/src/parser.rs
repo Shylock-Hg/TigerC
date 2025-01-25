@@ -520,7 +520,7 @@ impl<'a> Parser<'a> {
 
         ast::FuncDecl {
             name,
-            args: fields,
+            args: fields.into_iter().map(|f| f.into()).collect::<Vec<_>>(),
             ret_ty,
             body,
         }
@@ -539,7 +539,7 @@ impl<'a> Parser<'a> {
         };
         self.eat_expect(Token::Assign);
         let init = self.parse_expr();
-        ast::VarDecl { name, ty, init }
+        ast::VarDecl::new(name, ty, init)
     }
 
     fn parse_type_decl(&mut self) -> ast::TypeDecl {
@@ -1091,11 +1091,11 @@ mod tests {
         let e = parser.parse_expr();
         let expected = ast::Expr::Let(ast::Let {
             decls: vec![
-                ast::Decl::Var(ast::VarDecl {
-                    name: ident_pool::create_symbol("b"),
-                    ty: None,
-                    init: ast::Expr::Literal(ast::Value::Int(1)),
-                }),
+                ast::Decl::Var(ast::VarDecl::new(
+                    ident_pool::create_symbol("b"),
+                    None,
+                    ast::Expr::Literal(ast::Value::Int(1)),
+                )),
                 ast::Decl::Type(ast::TypeDecl {
                     type_name: ident_pool::create_symbol("t1"),
                     ty: ast::Ty::Name(ident_pool::create_symbol("t2")),
@@ -1138,6 +1138,6 @@ mod tests {
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
-        let e = parser.parse_expr();
+        let _e = parser.parse_expr();
     }
 }

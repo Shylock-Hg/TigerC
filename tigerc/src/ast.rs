@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::fmt::Display;
+use std::rc::Rc;
 
 use crate::ident_pool::Symbol;
 
@@ -322,6 +324,18 @@ pub struct VarDecl {
     pub name: Symbol,
     pub ty: Option<Symbol>,
     pub init: Expr,
+    pub escape: Rc<RefCell<bool>>,
+}
+
+impl VarDecl {
+    pub fn new(name: Symbol, ty: Option<Symbol>, init: Expr) -> Self {
+        VarDecl {
+            name,
+            ty,
+            init,
+            escape: Rc::new(RefCell::new(false)),
+        }
+    }
 }
 
 impl Display for VarDecl {
@@ -333,12 +347,44 @@ impl Display for VarDecl {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Parameter {
+    pub name: Symbol,
+    pub ty: Symbol,
+    // will set after escape analysis, in Tiger only variable used in nested function require escape
+    pub escape: Rc<RefCell<bool>>,
+}
+
+impl Parameter {
+    pub fn new(name: Symbol, ty: Symbol) -> Self {
+        Parameter {
+            name,
+            ty,
+            escape: Rc::new(RefCell::new(false)),
+        }
+    }
+
+    pub fn from(f: Field) -> Self {
+        Parameter {
+            name: f.name,
+            ty: f.ty,
+            escape: Rc::new(RefCell::new(false)),
+        }
+    }
+}
+
+impl From<Field> for Parameter {
+    fn from(f: Field) -> Self {
+        Parameter::from(f)
+    }
+}
+
 // FuncDecl => "function" <ident> "(" TypeFields ")" "=" expr
 //          => "function" <ident> "(" TypeFields ")" ":" <ident> "=" expr
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncDecl {
     pub name: Symbol,
-    pub args: Vec<Field>,
+    pub args: Vec<Parameter>,
     pub ret_ty: Option<Symbol>,
     pub body: Expr,
 }

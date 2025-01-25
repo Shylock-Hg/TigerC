@@ -172,6 +172,13 @@ pub struct VarDecl {
     pub name: Symbol,
     pub ty: Type,
     pub init: TypeExpr,
+    pub escape: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Parameter {
+    pub ty: Type,
+    pub escape: bool,
 }
 
 // FuncDecl => "function" <ident> "(" TypeFields ")" "=" expr
@@ -179,7 +186,7 @@ pub struct VarDecl {
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncDecl {
     pub name: Symbol,
-    pub args: IndexMap<Symbol, Type>,
+    pub args: IndexMap<Symbol, Parameter>,
     pub ret_ty: Type,
     pub body: TypeExpr,
 }
