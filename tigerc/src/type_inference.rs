@@ -1,11 +1,12 @@
 use std::result;
 
 use indexmap::IndexMap;
+use log;
 
-use crate::ast;
 use crate::ident_pool::{kw, Symbol};
 use crate::symbol_table::SymbolTable;
 use crate::type_ast;
+use crate::{ast, ident_pool};
 
 #[derive(Debug)]
 pub struct InferError(pub String);
@@ -27,17 +28,14 @@ struct SymbolValue {
 }
 
 macro_rules! infer_logical_op {
-    ($self:ident, $l:ident, $r:ident) => {{
+    ($self:ident, $l:ident, $r:ident, $op:path) => {{
         let ty_left = $self.infer_expr(&$l)?;
         let ty_right = $self.infer_expr(&$r)?;
         match (&ty_left.ty, &ty_right.ty) {
             (type_ast::Type::Int, type_ast::Type::Int) => {
                 let ty = ty_left.ty.clone();
                 Ok(type_ast::TypeExpr {
-                    expr: type_ast::TypeExpr_::Binary(type_ast::Binary::And(
-                        Box::new(ty_left),
-                        Box::new(ty_right),
-                    )),
+                    expr: type_ast::TypeExpr_::Binary($op(Box::new(ty_left), Box::new(ty_right))),
                     ty,
                 })
             }
@@ -50,7 +48,7 @@ macro_rules! infer_logical_op {
 }
 
 macro_rules! infer_compare_gl {
-    ($self:ident, $l:ident, $r:ident) => {{
+    ($self:ident, $l:ident, $r:ident, $op:path) => {{
         let ty_left = $self.infer_expr(&$l)?;
         let ty_right = $self.infer_expr(&$r)?;
         if ty_left.ty != ty_right.ty {
@@ -58,10 +56,7 @@ macro_rules! infer_compare_gl {
         }
         match ty_left.ty {
             type_ast::Type::Int => Ok(type_ast::TypeExpr {
-                expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Eq(
-                    Box::new(ty_left),
-                    Box::new(ty_right),
-                )),
+                expr: type_ast::TypeExpr_::Binary($op(Box::new(ty_left), Box::new(ty_right))),
                 ty: type_ast::Type::Int,
             }),
             _ => Err(InferError::new(format!(
@@ -73,24 +68,26 @@ macro_rules! infer_compare_gl {
 }
 
 macro_rules! infer_compare_eq_ne {
-    ($self:ident, $l:ident, $r:ident) => {{
+    ($self:ident, $l:ident, $r:ident, $op:path) => {{
         let ty_left = $self.infer_expr(&$l)?;
         let ty_right = $self.infer_expr(&$r)?;
-        if ty_left.ty != ty_right.ty {
-            return Err(InferError::new(format!("Expect same type for equality.")));
+        if !(ty_left.ty.can_assign(&ty_right.ty) || ty_right.ty.can_assign(&ty_left.ty)) {
+            return Err(InferError::new(format!(
+                "Expect same type for equality, but got {:?} and {:?}.",
+                ty_left.ty, ty_right.ty
+            )));
         }
         match ty_left.ty {
-            type_ast::Type::Int | type_ast::Type::Record(..) | type_ast::Type::Array(..) => {
-                Ok(type_ast::TypeExpr {
-                    expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Eq(
-                        Box::new(ty_left),
-                        Box::new(ty_right),
-                    )),
-                    ty: type_ast::Type::Int,
-                })
-            }
+            type_ast::Type::Int
+            | type_ast::Type::Str
+            | type_ast::Type::Nil
+            | type_ast::Type::Record(..)
+            | type_ast::Type::Array(..) => Ok(type_ast::TypeExpr {
+                expr: type_ast::TypeExpr_::Binary($op(Box::new(ty_left), Box::new(ty_right))),
+                ty: type_ast::Type::Int,
+            }),
             _ => Err(InferError::new(format!(
-                "Expect int/record/array type for (not)equality, got {:?}.",
+                "Expect int/string/record/array type for (not)equality, got {:?}.",
                 ty_left.ty
             ))),
         }
@@ -98,17 +95,14 @@ macro_rules! infer_compare_eq_ne {
 }
 
 macro_rules! infer_arithmetic {
-    ($self:ident, $l:ident, $r:ident) => {{
+    ($self:ident, $l:ident, $r:ident, $op:path) => {{
         let ty_l = $self.infer_expr(&$l)?;
         let ty_r = $self.infer_expr(&$r)?;
         match (&ty_l.ty, &ty_r.ty) {
             (type_ast::Type::Int, type_ast::Type::Int) => {
                 let ty = ty_l.ty.clone();
                 Ok(type_ast::TypeExpr {
-                    expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Add(
-                        Box::new(ty_l),
-                        Box::new(ty_r),
-                    )),
+                    expr: type_ast::TypeExpr_::Binary($op(Box::new(ty_l), Box::new(ty_r))),
                     ty,
                 })
             }
@@ -142,9 +136,60 @@ impl TypeInference {
                 ty: type_ast::Type::Str,
             },
         );
+        let mut var_table = SymbolTable::new();
+        var_table.insert_symbol(
+            ident_pool::create_symbol("print"),
+            SymbolValue {
+                ty: type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("print"),
+                    params: vec![type_ast::Type::Str],
+                    return_ty: Box::new(type_ast::Type::Nothing),
+                }),
+            },
+        );
+        var_table.insert_symbol(
+            ident_pool::create_symbol("getchar"),
+            SymbolValue {
+                ty: type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("getchar"),
+                    params: vec![],
+                    return_ty: Box::new(type_ast::Type::Str),
+                }),
+            },
+        );
+        var_table.insert_symbol(
+            ident_pool::create_symbol("flush"),
+            SymbolValue {
+                ty: type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("flush"),
+                    params: vec![],
+                    return_ty: Box::new(type_ast::Type::Nothing),
+                }),
+            },
+        );
+        var_table.insert_symbol(
+            ident_pool::create_symbol("ord"),
+            SymbolValue {
+                ty: type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("ord"),
+                    params: vec![type_ast::Type::Str],
+                    return_ty: Box::new(type_ast::Type::Int),
+                }),
+            },
+        );
+        var_table.insert_symbol(
+            ident_pool::create_symbol("chr"),
+            SymbolValue {
+                ty: type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::create_symbol("chr"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Str),
+                }),
+            },
+        );
         Self {
             type_symbol_table: ty_table,
-            variable_symbol_table: SymbolTable::new(),
+            variable_symbol_table: var_table,
         }
     }
 
@@ -155,6 +200,7 @@ impl TypeInference {
         }
     }
 
+    // TODO maybe return void
     fn infer_decl(&mut self, decl: &ast::Decl) -> Result<type_ast::TypeDecl> {
         match decl {
             ast::Decl::Type(t) => {
@@ -164,21 +210,24 @@ impl TypeInference {
                         type_ast::Type::Array(Box::new(sub))
                     }
                     ast::Ty::Name(n) => self.type_symbol_table.get_symbol(n).unwrap().ty.clone(),
-                    ast::Ty::Struct(s) => type_ast::Type::Record(type_ast::Record {
-                        fields: self.infer_field_list(&s.0),
-                    }),
+                    ast::Ty::Struct(s) => {
+                        // just placeholder for recursive type checking
+                        self.type_symbol_table.insert_symbol(
+                            t.type_name,
+                            SymbolValue {
+                                ty: type_ast::Type::Name(t.type_name),
+                            },
+                        );
+                        type_ast::Type::Record(type_ast::Record {
+                            fields: self.infer_field_list(&s.0),
+                        })
+                    }
                 };
                 self.type_symbol_table
-                    .insert_symbol(t.type_name, SymbolValue { ty });
+                    .insert_symbol(t.type_name, SymbolValue { ty: ty.clone() });
                 Ok(type_ast::TypeDecl::Type(type_ast::TyDecl {
                     type_name: t.type_name,
-                    ty: match &t.ty {
-                        ast::Ty::Array(s) => type_ast::Ty::Array(*s),
-                        ast::Ty::Name(s) => type_ast::Ty::Name(*s),
-                        ast::Ty::Struct(s) => {
-                            type_ast::Ty::Struct(type_ast::TyStruct(self.infer_field_list(&s.0)))
-                        }
-                    },
+                    ty,
                 }))
             }
             ast::Decl::Var(v) => {
@@ -199,22 +248,11 @@ impl TypeInference {
                 }))
             }
             ast::Decl::Func(f) => {
-                // scope of function body
-                self.variable_symbol_table.begin_scope();
                 let typed_args = self.infer_parameter_list(&f.args);
-                for (name, ty) in typed_args.iter() {
-                    self.variable_symbol_table
-                        .insert_symbol(*name, SymbolValue { ty: ty.ty.clone() });
-                }
-                let typed_body = self.infer_expr(&f.body)?;
-                self.variable_symbol_table.end_scope();
                 let ret_ty = f
                     .ret_ty
                     .map(|t| self.type_symbol_table.get_symbol(&t).unwrap().ty.clone())
-                    .unwrap_or(typed_body.ty.clone());
-                if typed_body.ty != ret_ty {
-                    return Err(InferError::conflict_type(&ret_ty, &typed_body.ty));
-                }
+                    .unwrap_or(type_ast::Type::Nothing);
                 self.variable_symbol_table.insert_symbol(
                     f.name,
                     SymbolValue {
@@ -228,6 +266,18 @@ impl TypeInference {
                         }),
                     },
                 );
+                // scope of function body
+                self.variable_symbol_table.begin_scope();
+                for (name, ty) in typed_args.iter() {
+                    self.variable_symbol_table
+                        .insert_symbol(*name, SymbolValue { ty: ty.ty.clone() });
+                }
+                let typed_body = self.infer_expr(&f.body)?;
+                self.variable_symbol_table.end_scope();
+
+                if typed_body.ty != ret_ty {
+                    return Err(InferError::conflict_type(&ret_ty, &typed_body.ty));
+                }
                 Ok(type_ast::TypeDecl::Func(type_ast::FuncDecl {
                     name: f.name,
                     args: typed_args,
@@ -298,40 +348,40 @@ impl TypeInference {
             },
             ast::Expr::Binary(binary) => match binary {
                 ast::Binary::Add(l, r) => {
-                    infer_arithmetic!(self, l, r)
+                    infer_arithmetic!(self, l, r, type_ast::Binary::Add)
                 }
                 ast::Binary::Minus(l, r) => {
-                    infer_arithmetic!(self, l, r)
+                    infer_arithmetic!(self, l, r, type_ast::Binary::Minus)
                 }
                 ast::Binary::Multiply(l, r) => {
-                    infer_arithmetic!(self, l, r)
+                    infer_arithmetic!(self, l, r, type_ast::Binary::Multiply)
                 }
                 ast::Binary::Divide(l, r) => {
-                    infer_arithmetic!(self, l, r)
+                    infer_arithmetic!(self, l, r, type_ast::Binary::Divide)
                 }
                 ast::Binary::Eq(l, r) => {
-                    infer_compare_eq_ne!(self, l, r)
+                    infer_compare_eq_ne!(self, l, r, type_ast::Binary::Eq)
                 }
                 ast::Binary::Ne(l, r) => {
-                    infer_compare_eq_ne!(self, l, r)
+                    infer_compare_eq_ne!(self, l, r, type_ast::Binary::Ne)
                 }
                 ast::Binary::Gt(l, r) => {
-                    infer_compare_gl!(self, l, r)
+                    infer_compare_gl!(self, l, r, type_ast::Binary::Gt)
                 }
                 ast::Binary::Ge(l, r) => {
-                    infer_compare_gl!(self, l, r)
+                    infer_compare_gl!(self, l, r, type_ast::Binary::Ge)
                 }
                 ast::Binary::Lt(l, r) => {
-                    infer_compare_gl!(self, l, r)
+                    infer_compare_gl!(self, l, r, type_ast::Binary::Lt)
                 }
                 ast::Binary::Le(l, r) => {
-                    infer_compare_gl!(self, l, r)
+                    infer_compare_gl!(self, l, r, type_ast::Binary::Le)
                 }
                 ast::Binary::And(l, r) => {
-                    infer_logical_op!(self, l, r)
+                    infer_logical_op!(self, l, r, type_ast::Binary::And)
                 }
                 ast::Binary::Or(l, r) => {
-                    infer_logical_op!(self, l, r)
+                    infer_logical_op!(self, l, r, type_ast::Binary::Or)
                 }
             },
             ast::Expr::FuncCall(f, args) => {
@@ -342,39 +392,40 @@ impl TypeInference {
                     .ty
                     .clone();
 
-                if let type_ast::Type::Function(tf) = ty_func {
-                    if tf.params.len() != args.len() {
-                        Err(InferError::new(format!(
-                            "Expect {} arguments for function `{}`, got {}.",
-                            tf.params.len(),
-                            tf.name,
-                            args.len(),
-                        )))
-                    } else {
-                        let mut ty_args = vec![];
-                        for a in args.iter() {
-                            let ty_arg = self.infer_expr(a)?;
-                            ty_args.push(ty_arg);
-                        }
-
-                        for (p, a) in tf.params.iter().zip(ty_args.iter()) {
-                            if p != &a.ty {
-                                return Err(InferError::new(format!(
-                                    "Expect {:?} type for argument {} but got {:?}.",
-                                    p, f, a.ty
-                                )));
+                match ty_func {
+                    type_ast::Type::Function(tf) => {
+                        if tf.params.len() != args.len() {
+                            Err(InferError::new(format!(
+                                "Expect {} arguments for function `{}`, got {}.",
+                                tf.params.len(),
+                                tf.name,
+                                args.len(),
+                            )))
+                        } else {
+                            let mut ty_args = vec![];
+                            for a in args.iter() {
+                                let ty_arg = self.infer_expr(a)?;
+                                ty_args.push(ty_arg);
                             }
+
+                            for (p, a) in tf.params.iter().zip(ty_args.iter()) {
+                                if p != &a.ty {
+                                    return Err(InferError::new(format!(
+                                        "Expect {:?} type for argument {} but got {:?}.",
+                                        p, f, a.ty
+                                    )));
+                                }
+                            }
+                            Ok(type_ast::TypeExpr {
+                                expr: type_ast::TypeExpr_::FuncCall(tf.name, ty_args),
+                                ty: *tf.return_ty,
+                            })
                         }
-                        Ok(type_ast::TypeExpr {
-                            expr: type_ast::TypeExpr_::FuncCall(tf.name, ty_args),
-                            ty: *tf.return_ty,
-                        })
                     }
-                } else {
-                    Err(InferError::new(format!(
+                    _ => Err(InferError::new(format!(
                         "Expect function type for function call, got {:?}.",
                         ty_func
-                    )))
+                    ))),
                 }
             }
             ast::Expr::RecordExpr(record) => {
@@ -397,10 +448,20 @@ impl TypeInference {
                         }
                         let ty_arg = self.infer_expr(&ee)?;
                         if t != &ty_arg.ty {
-                            return Err(InferError::new(format!(
-                                "Expect {:?} type for field {}, got {:?}.",
-                                t, f, ty_arg.ty,
-                            )));
+                            if let type_ast::Type::Name(n) = t {
+                                let t = self.type_symbol_table.get_symbol(n).unwrap().ty.clone();
+                                if &t != &ty_arg.ty {
+                                    return Err(InferError::new(format!(
+                                        "Expect {:?} type for field {}, got {:?}.",
+                                        t, f, ty_arg.ty,
+                                    )));
+                                }
+                            } else {
+                                return Err(InferError::new(format!(
+                                    "Expect {:?} type for field {}, got {:?}.",
+                                    t, f, ty_arg.ty,
+                                )));
+                            }
                         }
                         init.push((*f, ty_arg));
                     }
@@ -480,7 +541,7 @@ impl TypeInference {
                 }
                 let ty_then = self.infer_expr(then)?;
                 let ty_el = self.infer_expr(el)?;
-                if ty_then.ty != ty_el.ty {
+                if !(ty_then.ty.can_assign(&ty_el.ty) || ty_el.ty.can_assign(&ty_then.ty)) {
                     Err(InferError::new(format!(
                         "Expect same type for then and else, but got {:?} and {:?}",
                         ty_then.ty, ty_el.ty
@@ -555,6 +616,12 @@ impl TypeInference {
                         ty_upper.ty,
                     )));
                 }
+                self.variable_symbol_table.insert_symbol(
+                    for_.local,
+                    SymbolValue {
+                        ty: type_ast::Type::Int,
+                    },
+                );
                 let ty_body = self.infer_expr(&for_.body)?;
                 if !matches![ty_body.ty, type_ast::Type::Nothing] {
                     return Err(InferError::new(format!(
@@ -634,6 +701,12 @@ impl TypeInference {
                 let ty_left = self.infer_left_value(l)?;
                 if let type_ast::Type::Record(r) = &ty_left.ty {
                     let ty = r.fields.get(f).unwrap().clone();
+                    let ty = if let type_ast::Type::Name(_) = ty {
+                        // the name typed field is just record itself
+                        ty_left.ty.clone()
+                    } else {
+                        ty
+                    };
                     Ok(type_ast::LeftValue {
                         left: type_ast::LeftValue_::Field(Box::new(ty_left), *f),
                         ty,
@@ -861,40 +934,6 @@ mod tests {
     }
 
     #[test]
-    fn test_let_higher_order_function() {
-        let doc = "
-        let
-            function f(x: int) =
-                let function g(y: int) = x+y
-                in g
-                end
-        in f
-        end
-        ";
-        let it = tokenize(doc);
-        let mut parser = Parser::new(Box::new(it));
-        let e = parser.parse();
-        let mut ti = TypeInference::new();
-        let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(
-                te.ty,
-                type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("f"),
-                    params: vec![type_ast::Type::Int],
-                    return_ty: Box::new(type_ast::Type::Function(type_ast::Function {
-                        name: ident_pool::create_symbol("g"),
-                        params: vec![type_ast::Type::Int],
-                        return_ty: Box::new(type_ast::Type::Int),
-                    })),
-                })
-            );
-        } else {
-            panic!("Unexpected decl.");
-        }
-    }
-
-    #[test]
     #[should_panic]
     fn test_use_undefined_type() {
         let doc = "
@@ -920,5 +959,139 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let _te = ti.infer(&e).unwrap();
+    }
+
+    #[test]
+    fn test_recursive_record() {
+        let doc = "
+        let type list = {num: int, rest: list} in
+        end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = parser.parse();
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        let expected = type_ast::TypeAst::TypeExpr(type_ast::TypeExpr {
+            ty: type_ast::Type::Nothing,
+            expr: type_ast::TypeExpr_::Let(type_ast::Let {
+                decls: vec![type_ast::TypeDecl::Type(type_ast::TyDecl {
+                    type_name: ident_pool::create_symbol("list"),
+                    ty: type_ast::Type::Record(type_ast::Record {
+                        fields: vec![
+                            (ident_pool::create_symbol("num"), type_ast::Type::Int),
+                            (
+                                ident_pool::create_symbol("rest"),
+                                type_ast::Type::Name(ident_pool::create_symbol("list")),
+                            ),
+                        ]
+                        .into_iter()
+                        .collect::<IndexMap<_, _>>(),
+                    }),
+                })],
+                sequence: vec![],
+            }),
+        });
+        assert_eq!(te, expected);
+    }
+
+    #[test]
+    fn test_recursive_function() {
+        let doc = "
+        let function f(x: int): int =
+            if x < 0 then 0 else f(x-1)
+        in
+            f(10)
+        end
+        ";
+        let it = tokenize(doc);
+        let mut parser = Parser::new(Box::new(it));
+        let e = dbg!(parser.parse());
+        let mut ti = TypeInference::new();
+        let te = ti.infer(&e).unwrap();
+        let expected = type_ast::TypeAst::TypeExpr(type_ast::TypeExpr {
+            ty: type_ast::Type::Int,
+            expr: type_ast::TypeExpr_::Let(type_ast::Let {
+                decls: vec![type_ast::TypeDecl::Func(type_ast::FuncDecl {
+                    name: ident_pool::create_symbol("f"),
+                    args: [(
+                        ident_pool::create_symbol("x"),
+                        type_ast::Parameter {
+                            ty: type_ast::Type::Int,
+                            escape: false,
+                        },
+                    )]
+                    .into_iter()
+                    .collect::<IndexMap<_, _>>(),
+                    ret_ty: type_ast::Type::Int,
+                    body: type_ast::TypeExpr {
+                        ty: type_ast::Type::Int,
+                        expr: type_ast::TypeExpr_::IfThenElse(type_ast::IfThenElseExpr {
+                            condition: Box::new(type_ast::TypeExpr {
+                                ty: type_ast::Type::Int,
+                                expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Lt(
+                                    Box::new(type_ast::TypeExpr {
+                                        ty: type_ast::Type::Int,
+                                        expr: type_ast::TypeExpr_::LeftValue(type_ast::LeftValue {
+                                            ty: type_ast::Type::Int,
+                                            left: type_ast::LeftValue_::Variable(
+                                                ident_pool::create_symbol("x"),
+                                            ),
+                                        }),
+                                    }),
+                                    Box::new(type_ast::TypeExpr {
+                                        ty: type_ast::Type::Int,
+                                        expr: type_ast::TypeExpr_::Literal(ast::Value::Int(0)),
+                                    }),
+                                )),
+                            }),
+                            then: Box::new(type_ast::TypeExpr {
+                                ty: type_ast::Type::Int,
+                                expr: type_ast::TypeExpr_::Literal(ast::Value::Int(0)),
+                            }),
+                            el: Box::new(type_ast::TypeExpr {
+                                ty: type_ast::Type::Int,
+                                expr: type_ast::TypeExpr_::FuncCall(
+                                    ident_pool::create_symbol("f"),
+                                    vec![type_ast::TypeExpr {
+                                        ty: type_ast::Type::Int,
+                                        expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Minus(
+                                            Box::new(type_ast::TypeExpr {
+                                                ty: type_ast::Type::Int,
+                                                expr: type_ast::TypeExpr_::LeftValue(
+                                                    type_ast::LeftValue {
+                                                        ty: type_ast::Type::Int,
+                                                        left: type_ast::LeftValue_::Variable(
+                                                            ident_pool::create_symbol("x"),
+                                                        ),
+                                                    },
+                                                ),
+                                            }),
+                                            Box::new(type_ast::TypeExpr {
+                                                ty: type_ast::Type::Int,
+                                                expr: type_ast::TypeExpr_::Literal(
+                                                    ast::Value::Int(1),
+                                                ),
+                                            }),
+                                        )),
+                                    }],
+                                ),
+                            }),
+                        }),
+                    },
+                })],
+                sequence: vec![type_ast::TypeExpr {
+                    ty: type_ast::Type::Int,
+                    expr: type_ast::TypeExpr_::FuncCall(
+                        ident_pool::create_symbol("f"),
+                        vec![type_ast::TypeExpr {
+                            ty: type_ast::Type::Int,
+                            expr: type_ast::TypeExpr_::Literal(ast::Value::Int(10)),
+                        }],
+                    ),
+                }],
+            }),
+        });
+        assert_eq!(te, expected);
     }
 }

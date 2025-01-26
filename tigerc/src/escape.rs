@@ -5,7 +5,7 @@ use std::vec;
 use crate::ast;
 use crate::ident_pool::Symbol;
 
-struct Escape {
+pub struct Escape {
     e: Option<Rc<RefCell<bool>>>,
 }
 
@@ -152,7 +152,7 @@ impl Escape {
             ast::LeftValue::Variable(s) => {
                 // escape!(depth, var_depth, s, var, self.e);
                 if let Some(v) = var {
-                    if depth > var_depth && dbg!(v) == s {
+                    if depth > var_depth && v == s {
                         if let Some(e) = &self.e {
                             e.replace(true);
                         }
@@ -238,7 +238,7 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let mut ast = parser.parse();
         Escape::new().escape(&mut ast);
-        let escape = match dbg!(ast) {
+        let escape = match ast {
             ast::Ast::Expr(ast::Expr::Let(ast::Let { decls, .. })) => {
                 let decl = decls.get(1).unwrap();
                 match decl {
@@ -267,7 +267,7 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let mut ast = parser.parse();
         Escape::new().escape(&mut ast);
-        let escape = match dbg!(ast) {
+        let escape = match ast {
             ast::Ast::Expr(ast::Expr::Let(ast::Let { decls, .. })) => {
                 let decl = decls.get(2).unwrap();
                 match decl {

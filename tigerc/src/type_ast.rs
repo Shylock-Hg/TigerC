@@ -10,7 +10,24 @@ pub enum Type {
     Record(Record),
     Array(Box<Type>),
     Function(Function),
+    // just place holder for recursive type/function
     Name(Symbol),
+}
+
+impl Type {
+    // Can assign to other?
+    pub fn can_assign(&self, other: &Type) -> bool {
+        match self {
+            Type::Nil => {
+                if let Type::Record(_) = other {
+                    true
+                } else {
+                    false
+                }
+            }
+            _ => self == other,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -200,7 +217,7 @@ pub struct FuncDecl {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TyDecl {
     pub type_name: Symbol,
-    pub ty: Ty,
+    pub ty: Type,
 }
 
 #[derive(Debug, PartialEq, Eq)]
