@@ -974,6 +974,7 @@ mod tests {
         assert_eq!(format!("{}", e), "a := 1");
     }
 
+    #[test]
     fn test_assign_3_expr() {
         let doc = "
         a := 1
@@ -988,6 +989,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_if_expr() {
         let doc = "
         if 1 then 2 else 3
@@ -1003,6 +1005,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_if_2_expr() {
         let doc = "
         if 1 then 2
@@ -1017,6 +1020,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_if_nested_expr() {
         let doc = "
         if if 1 then 2 then 2 else 3
@@ -1035,6 +1039,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_while_expr() {
         let doc = "
         while 1 do var1 := 3
@@ -1052,6 +1057,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_for_expr() {
         let doc = "
         for it := 1 to 10 do var1 := 3
@@ -1071,6 +1077,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_break_expr() {
         let doc = "
         break
@@ -1082,6 +1089,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_let_expr() {
         let doc = "
         let var b := 1 type t1 = t2 in 1; 1+1; \"hello\" end
@@ -1113,6 +1121,7 @@ mod tests {
         assert_eq!(e, expected);
     }
 
+    #[test]
     fn test_parenthesis_expr() {
         let doc = "
         (1+1)*2
@@ -1121,10 +1130,12 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         let expected = ast::Expr::Binary(ast::Binary::Multiply(
-            Box::new(ast::Expr::Binary(ast::Binary::Add(
-                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
-                Box::new(ast::Expr::Literal(ast::Value::Int(1))),
-            ))),
+            Box::new(ast::Expr::Parenthesis(Box::new(ast::Expr::Binary(
+                ast::Binary::Add(
+                    Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                    Box::new(ast::Expr::Literal(ast::Value::Int(1))),
+                ),
+            )))),
             Box::new(ast::Expr::Literal(ast::Value::Int(2))),
         ));
         assert_eq!(e, expected);

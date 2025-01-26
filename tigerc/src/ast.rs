@@ -201,7 +201,7 @@ pub struct Let {
 impl Display for Let {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "let ")?;
-        for (i, decl) in self.decls.iter().enumerate() {
+        for decl in self.decls.iter() {
             write!(f, "{} ", decl)?;
         }
         write!(f, " in ")?;

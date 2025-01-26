@@ -1,7 +1,6 @@
 use std::result;
 
 use indexmap::IndexMap;
-use log;
 
 use crate::ident_pool::{kw, Symbol};
 use crate::symbol_table::SymbolTable;
