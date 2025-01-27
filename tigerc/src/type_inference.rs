@@ -209,7 +209,7 @@ impl TypeInference {
                         type_ast::Type::Array(Box::new(sub))
                     }
                     ast::Ty::Name(n) => self.type_symbol_table.get_symbol(n).unwrap().ty.clone(),
-                    ast::Ty::Struct(s) => {
+                    ast::Ty::Record(s) => {
                         // just placeholder for recursive type checking
                         self.type_symbol_table.insert_symbol(
                             t.type_name,

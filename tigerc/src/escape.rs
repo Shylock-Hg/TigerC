@@ -189,7 +189,7 @@ mod tests {
             decls: vec![
                 ast::Decl::Type(ast::TypeDecl {
                     type_name: ident_pool::create_symbol("r1"),
-                    ty: ast::Ty::Struct(ast::TyStruct(vec![
+                    ty: ast::Ty::Record(ast::TyRecord(vec![
                         ast::Field {
                             name: ident_pool::create_symbol("f1"),
                             ty: ident_pool::create_symbol("int"),

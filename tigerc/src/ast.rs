@@ -427,7 +427,7 @@ impl Display for TypeDecl {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Ty {
     Name(Symbol),
-    Struct(TyStruct),
+    Record(TyRecord),
     Array(Symbol),
 }
 
@@ -435,16 +435,16 @@ impl Display for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Ty::Name(name) => write!(f, "{}", name),
-            Ty::Struct(fields) => write!(f, "{}", fields),
+            Ty::Record(fields) => write!(f, "{}", fields),
             Ty::Array(ty) => write!(f, "array of {}", ty),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct TyStruct(pub Vec<Field>);
+pub struct TyRecord(pub Vec<Field>);
 
-impl Display for TyStruct {
+impl Display for TyRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
         for (i, field) in self.0.iter().enumerate() {

@@ -223,9 +223,9 @@ pub struct TyDecl {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Ty {
     Name(Symbol),
-    Struct(TyStruct),
+    Record(TyRecord),
     Array(Symbol),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct TyStruct(pub IndexMap<Symbol, Type>);
+pub struct TyRecord(pub IndexMap<Symbol, Type>);

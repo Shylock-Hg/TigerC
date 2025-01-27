@@ -570,11 +570,11 @@ impl<'a> Parser<'a> {
                     Token::CloseBrace => {
                         self.bump();
                         // empty fields
-                        ast::Ty::Struct(ast::TyStruct(vec![]))
+                        ast::Ty::Record(ast::TyRecord(vec![]))
                     }
                     Token::Ident(..) => {
                         let field_list = self.parse_field_list();
-                        ast::Ty::Struct(ast::TyStruct(field_list))
+                        ast::Ty::Record(ast::TyRecord(field_list))
                     }
                     _ => Self::unexpected_token(look1),
                 }
