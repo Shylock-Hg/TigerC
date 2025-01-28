@@ -280,9 +280,7 @@ impl cursor::Cursor<'_> {
         debug_assert!(is_digit(self.prev()));
         let mut buf = String::new();
         buf.push(self.prev());
-        while is_digit(self.first()) {
-            buf.push(self.bump().unwrap());
-        }
+        self.eat_while_back(&mut buf, is_digit);
         Token::Number(buf.parse::<i64>().unwrap())
     }
 }
