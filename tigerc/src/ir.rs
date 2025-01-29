@@ -41,8 +41,11 @@ impl Hash for LowerIdent {
 // IR
 #[derive(Debug, PartialEq, Eq)]
 pub enum Exp {
+    // constant integer
     Const(i64),
+    // code location
     Name(Label),
+    // temporary variable
     Temp(Temp),
     BinOp {
         op: BinOp,
