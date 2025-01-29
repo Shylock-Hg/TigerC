@@ -4,6 +4,6 @@ use crate::ir::LowerIdent;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Temp(pub LowerIdent);
 
-// for function
+// for function or code block location
 #[derive(Debug, PartialEq, Eq)]
 pub struct Label(pub LowerIdent);
