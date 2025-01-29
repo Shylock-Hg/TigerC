@@ -48,6 +48,12 @@ pub fn get_str(symbol: &Symbol) -> String {
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Symbol(u32);
 
+impl Symbol {
+    pub fn new(name: &str) -> Self {
+        create_symbol(name)
+    }
+}
+
 impl Debug for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&get_str(self))?;
