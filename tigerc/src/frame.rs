@@ -20,14 +20,14 @@ pub struct Variable {
 
 pub trait Frame {
     fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self;
-    fn name(&self) -> Symbol;
+    fn name(&self) -> &ir::LowerIdent;
     fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable);
 }
 
 // frame of a function
 struct FrameAmd64 {
     // function name
-    name: Symbol,
+    name: ir::LowerIdent,
     // parameters
     parameters: IndexMap<ir::LowerIdent, Variable>,
     // local variables
@@ -37,14 +37,14 @@ struct FrameAmd64 {
 impl Frame for FrameAmd64 {
     fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self {
         FrameAmd64 {
-            name,
+            name: ir::LowerIdent::new(name),
             parameters,
             locals: IndexMap::new(),
         }
     }
 
-    fn name(&self) -> Symbol {
-        self.name
+    fn name(&self) -> &ir::LowerIdent {
+        &self.name
     }
 
     fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable) {

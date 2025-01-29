@@ -6,6 +6,7 @@ pub mod ident_pool;
 pub mod ir;
 pub mod parser;
 pub mod symbol_table;
+pub mod temp;
 pub mod tokenizer;
 pub mod type_ast;
 pub mod type_inference;
