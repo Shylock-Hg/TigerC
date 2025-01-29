@@ -1,6 +1,7 @@
 use indexmap::IndexMap;
 
-use crate::ident_pool::{self, Symbol};
+use crate::ident_pool::Symbol;
+use crate::ir;
 
 pub enum Access {
     // offset to frame pointer
@@ -18,9 +19,9 @@ pub struct Variable {
 }
 
 pub trait Frame {
-    fn new(name: Symbol, parameters: IndexMap<Symbol, Variable>) -> Self;
+    fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self;
     fn name(&self) -> Symbol;
-    fn allocate_local(&mut self, symbol: Symbol, var: Variable);
+    fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable);
 }
 
 // frame of a function
@@ -28,20 +29,17 @@ struct FrameAmd64 {
     // function name
     name: Symbol,
     // parameters
-    parameters: IndexMap<Symbol, Variable>,
+    parameters: IndexMap<ir::LowerIdent, Variable>,
     // local variables
-    locals: IndexMap<Symbol, Variable>,
-    // counting same name variable
-    id: usize,
+    locals: IndexMap<ir::LowerIdent, Variable>,
 }
 
 impl Frame for FrameAmd64 {
-    fn new(name: Symbol, parameters: IndexMap<Symbol, Variable>) -> Self {
+    fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self {
         FrameAmd64 {
             name,
             parameters,
             locals: IndexMap::new(),
-            id: 0,
         }
     }
 
@@ -49,12 +47,9 @@ impl Frame for FrameAmd64 {
         self.name
     }
 
-    fn allocate_local(&mut self, symbol: Symbol, var: Variable) {
+    fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable) {
         if self.locals.contains_key(&symbol) {
-            self.locals.insert(
-                ident_pool::create_symbol(&format!("{}:{}", symbol, self.id)),
-                var,
-            );
+            self.locals.insert(symbol, var);
         } else {
             self.locals.insert(symbol, var);
         }
