@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::ident_pool::Symbol;
+use crate::ident_pool::{kw, Symbol};
 use crate::temp::{Label, Temp};
 
 // Identify different symbol with same name
@@ -23,6 +23,10 @@ impl LowerIdent {
                 COUNTER
             },
         }
+    }
+
+    pub fn new_anonymous() -> LowerIdent {
+        LowerIdent::new(kw::REVERSED_ANONYMOUS)
     }
 }
 

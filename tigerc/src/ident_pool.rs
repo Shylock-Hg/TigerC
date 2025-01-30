@@ -26,6 +26,8 @@ symbols! {
         TOK_LET: "let",
         TOK_IN: "in",
         TOK_END: "end",
+        // use for inner symbol
+        REVERSED_ANONYMOUS: "__anonymous",
     }
 }
 
