@@ -73,10 +73,6 @@ pub enum BinOp {
     Div,
     And,
     Or,
-    ShiftLeft,
-    ShiftRight,
-    ArithmeticShiftRight,
-    Xor,
 }
 
 #[derive(Debug, PartialEq, Eq)]
