@@ -7,14 +7,13 @@ pub enum Access {
     // offset to frame pointer
     Frame(usize),
     // register notion
+    // But maybe spill to memory in later stage
     Register(Register),
 }
 
 pub struct Register(pub Symbol);
 
 pub struct Variable {
-    // true for variable that must be addressed
-    pub escape: bool,
     pub access: Access,
 }
 
