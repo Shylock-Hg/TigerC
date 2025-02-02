@@ -47,10 +47,6 @@ impl Frame for FrameAmd64 {
     }
 
     fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable) {
-        if self.locals.contains_key(&symbol) {
-            self.locals.insert(symbol, var);
-        } else {
-            self.locals.insert(symbol, var);
-        }
+        self.locals.insert(symbol, var);
     }
 }
