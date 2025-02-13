@@ -1,13 +1,17 @@
+pub mod amd64;
 pub mod ast;
 pub mod cursor;
+pub mod data_layout;
 pub mod escape;
 pub mod frame;
 pub mod ident_pool;
 pub mod ir;
 pub mod parser;
+pub mod stack;
 pub mod symbol_table;
 pub mod temp;
 pub mod tokenizer;
+pub mod translate;
 pub mod type_ast;
 pub mod type_inference;
 

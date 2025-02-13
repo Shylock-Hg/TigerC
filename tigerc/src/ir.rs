@@ -1,22 +1,29 @@
+use core::num;
 use std::hash::Hash;
 
 use crate::ident_pool::{kw, Symbol};
 use crate::temp::{Label, Temp};
 
+// escape?
+pub struct Variable(pub bool);
+
 // Identify different symbol with same name
 // We will flatten symbol scope when translate it to IR which close to machine code
-#[derive(Eq, Debug)]
-pub struct LowerIdent {
-    // this is used just for debug
-    pub symbol: Symbol,
-    pub number: usize,
+#[derive(Eq, Debug, Clone, Copy)]
+pub enum LowerIdent {
+    Number {
+        // this is used just for debug
+        symbol: Symbol,
+        number: usize,
+    },
+    Name(Symbol),
 }
 
 impl LowerIdent {
     pub fn new(symbol: Symbol) -> LowerIdent {
         // It's safe in single thread
         static mut COUNTER: usize = 0;
-        LowerIdent {
+        LowerIdent::Number {
             symbol,
             number: unsafe {
                 COUNTER += 1;
@@ -28,28 +35,52 @@ impl LowerIdent {
     pub fn new_anonymous() -> LowerIdent {
         LowerIdent::new(kw::REVERSED_ANONYMOUS)
     }
+
+    pub fn new_named(name: Symbol) -> LowerIdent {
+        LowerIdent::Name(name)
+    }
 }
 
 impl PartialEq for LowerIdent {
     fn eq(&self, other: &Self) -> bool {
-        self.number == other.number
+        match (self, other) {
+            (
+                LowerIdent::Number {
+                    symbol: _s1,
+                    number: n1,
+                },
+                LowerIdent::Number {
+                    symbol: _s2,
+                    number: n2,
+                },
+            ) => n1 == n2,
+            (LowerIdent::Name(s1), LowerIdent::Name(s2)) => s1 == s2,
+            _ => false,
+        }
     }
 }
 
 impl Hash for LowerIdent {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.number.hash(state);
+        match self {
+            LowerIdent::Number { number, .. } => {
+                number.hash(state);
+            }
+            LowerIdent::Name(symbol) => {
+                symbol.hash(state);
+            }
+        }
     }
 }
 
 // IR
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Exp {
     // constant integer
     Const(i64),
-    // code location
+    // code location (e.g. string literal)
     Name(Label),
-    // temporary variable
+    // temporary variable value
     Temp(Temp),
     BinOp {
         op: BinOp,
@@ -69,26 +100,25 @@ pub enum Exp {
     },
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BinOp {
     Plus,
     Minus,
-    Mul,
-    Div,
+    Multiply,
+    Divide,
     And,
     Or,
+    Xor,
+    LShift,
+    RShift,
+    ARShift,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Statement {
-    // evaluate exp and move to dst
-    MoveTemp {
-        dst: Temp,
-        val: Exp,
-    },
-    // evaluate exp and move to dst address
-    // store a word-size value to dst
-    MoveMem {
+    // evaluate val and move to dst
+    // dst could be `Temp` for `Mem`
+    Move {
         dst: Exp,
         val: Exp,
     },
@@ -115,7 +145,7 @@ pub enum Statement {
     Label(Label),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum CompareOp {
     Eq,
     Ne,

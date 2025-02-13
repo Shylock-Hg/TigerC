@@ -2,51 +2,33 @@ use indexmap::IndexMap;
 
 use crate::ident_pool::Symbol;
 use crate::ir;
+use crate::temp::{Label, Temp};
 
+#[derive(Clone)]
 pub enum Access {
     // offset to frame pointer
-    Frame(usize),
+    Frame(i64),
     // register notion
     // But maybe spill to memory in later stage
-    Register(Register),
+    Register(Temp),
 }
 
+#[derive(Clone)]
 pub struct Register(pub Symbol);
 
+#[derive(Clone)]
 pub struct Variable {
     pub access: Access,
 }
 
 pub trait Frame {
-    fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self;
-    fn name(&self) -> &ir::LowerIdent;
-    fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable);
-}
+    fn new(name: Label, parameters: IndexMap<ir::LowerIdent, ir::Variable>) -> Self;
 
-// frame of a function
-struct FrameAmd64 {
-    // function name
-    name: ir::LowerIdent,
-    // parameters
-    parameters: IndexMap<ir::LowerIdent, Variable>,
-    // local variables
-    locals: IndexMap<ir::LowerIdent, Variable>,
-}
+    fn fp() -> Temp;
+    fn return_value() -> Temp;
+    fn word_size() -> i64;
 
-impl Frame for FrameAmd64 {
-    fn new(name: Symbol, parameters: IndexMap<ir::LowerIdent, Variable>) -> Self {
-        FrameAmd64 {
-            name: ir::LowerIdent::new(name),
-            parameters,
-            locals: IndexMap::new(),
-        }
-    }
-
-    fn name(&self) -> &ir::LowerIdent {
-        &self.name
-    }
-
-    fn allocate_local(&mut self, symbol: ir::LowerIdent, var: Variable) {
-        self.locals.insert(symbol, var);
-    }
+    fn name(&self) -> &Label;
+    fn parameters(&self) -> &[Variable];
+    fn allocate_local(&mut self, var: ir::Variable) -> Variable;
 }
