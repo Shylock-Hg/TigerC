@@ -68,8 +68,12 @@ struct VarEntry<F> {
     var: frame::Variable,
 }
 
-enum Fragment {
-    Function { label: Label, body: Statement },
+enum Fragment<F: Frame> {
+    Function {
+        label: Label,
+        frame: Rc<RefCell<F>>,
+        body: Statement,
+    },
     StringLiteral(Label, String),
 }
 
@@ -128,11 +132,11 @@ macro_rules! translate_relation_op {
     }};
 }
 
-pub struct Translate<F> {
+pub struct Translate<F: Frame> {
     // the level variable defined in
     // TODO use HashMap<Temp, VarEntry<F>>
     var_table: SymbolTable<VarEntry<F>>,
-    fragments: Vec<Fragment>,
+    fragments: Vec<Fragment<F>>,
 
     // latest done label of loop(for/while)
     done_label: Stack<Label>,
@@ -192,8 +196,9 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         } else {
             Self::translate_return_value(body)
         };
-        self.fragments.push(Fragment::Function {
+        self.fragments.push(Fragment::<F>::Function {
             label: Label::new_named(f.name),
+            frame: new_level.current.clone(),
             body,
         });
     }
