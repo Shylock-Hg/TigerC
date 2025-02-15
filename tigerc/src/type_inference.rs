@@ -193,10 +193,7 @@ impl TypeInference {
     }
 
     pub fn infer(&mut self, ast: &ast::Ast) -> Result<type_ast::TypeAst> {
-        match ast {
-            ast::Ast::Decl(decl) => Ok(type_ast::TypeAst::TypeDecl(self.infer_decl(decl)?)),
-            ast::Ast::Expr(expr) => Ok(type_ast::TypeAst::TypeExpr(self.infer_expr(expr)?)),
-        }
+        Ok(type_ast::TypeAst::TypeExpr(self.infer_expr(&ast.0)?))
     }
 
     // TODO maybe return void

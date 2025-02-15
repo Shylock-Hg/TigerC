@@ -16,12 +16,7 @@ impl Escape {
 
     // mark escape parameters/local variables
     pub fn escape(&mut self, ast: &mut ast::Ast) {
-        match ast {
-            ast::Ast::Expr(expr) => {
-                self.escape_expr(expr, 0, 0, &None);
-            }
-            _ => unreachable!(),
-        }
+        self.escape_expr(&mut ast.0, 0, 0, &None);
     }
 
     // depth of nested function
@@ -185,7 +180,7 @@ mod tests {
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let mut ast = parser.parse();
-        let expected = ast::Ast::Expr(ast::Expr::Let(ast::Let {
+        let expected = ast::Ast(ast::Expr::Let(ast::Let {
             decls: vec![
                 ast::Decl::Type(ast::TypeDecl {
                     type_name: ident_pool::symbol("r1"),
@@ -239,7 +234,7 @@ mod tests {
         let mut ast = parser.parse();
         Escape::new().escape(&mut ast);
         let escape = match ast {
-            ast::Ast::Expr(ast::Expr::Let(ast::Let { decls, .. })) => {
+            ast::Ast(ast::Expr::Let(ast::Let { decls, .. })) => {
                 let decl = decls.get(1).unwrap();
                 match decl {
                     ast::Decl::Var(v) => *v.escape.borrow(),
@@ -268,7 +263,7 @@ mod tests {
         let mut ast = parser.parse();
         Escape::new().escape(&mut ast);
         let escape = match ast {
-            ast::Ast::Expr(ast::Expr::Let(ast::Let { decls, .. })) => {
+            ast::Ast(ast::Expr::Let(ast::Let { decls, .. })) => {
                 let decl = decls.get(2).unwrap();
                 match decl {
                     ast::Decl::Func(f) => *f.args[0].escape.borrow(),

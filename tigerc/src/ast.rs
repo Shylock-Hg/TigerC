@@ -5,17 +5,11 @@ use std::rc::Rc;
 use crate::ident_pool::Symbol;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Ast {
-    Decl(Decl),
-    Expr(Expr),
-}
+pub struct Ast(pub Expr);
 
 impl Display for Ast {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Ast::Decl(decl) => write!(f, "{}", decl),
-            Ast::Expr(expr) => write!(f, "{}", expr),
-        }
+        write!(f, "{}", self.0)
     }
 }
 

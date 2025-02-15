@@ -65,11 +65,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&mut self) -> ast::Ast {
-        if let Ok(decl) = self.parse_decl() {
-            ast::Ast::Decl(decl)
-        } else {
-            ast::Ast::Expr(self.parse_expr())
-        }
+        ast::Ast(self.parse_expr())
     }
 
     fn bump(&mut self) -> Option<Posed<Token>> {
@@ -635,7 +631,7 @@ mod tests {
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let ast = parser.parse();
-        assert_eq!(ast, ast::Ast::Expr(ast::Expr::Literal(ast::Value::Nil)));
+        assert_eq!(ast, ast::Ast(ast::Expr::Literal(ast::Value::Nil)));
     }
 
     #[test]
@@ -646,7 +642,7 @@ mod tests {
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
         let ast = parser.parse();
-        assert_eq!(ast, ast::Ast::Expr(ast::Expr::Literal(ast::Value::Nothing)));
+        assert_eq!(ast, ast::Ast(ast::Expr::Literal(ast::Value::Nothing)));
     }
 
     #[test]
@@ -659,7 +655,7 @@ mod tests {
         let ast = parser.parse();
         assert_eq!(
             ast,
-            ast::Ast::Expr(ast::Expr::Binary(ast::Binary::Ne(
+            ast::Ast(ast::Expr::Binary(ast::Binary::Ne(
                 Box::new(ast::Expr::Literal(ast::Value::Int(1))),
                 Box::new(ast::Expr::Literal(ast::Value::Int(2))),
             )))
