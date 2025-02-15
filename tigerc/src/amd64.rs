@@ -51,7 +51,7 @@ fn initialize() {
 const WORD_SIZE: i64 = 8;
 
 // frame of a function
-struct FrameAmd64 {
+pub struct FrameAmd64 {
     // function name
     name: Label,
     // parameters
@@ -65,6 +65,8 @@ impl PartialEq for FrameAmd64 {
         self.name == other.name
     }
 }
+
+impl Eq for FrameAmd64 {}
 
 impl FrameAmd64 {
     pub fn arg_registers() -> Vec<Temp> {

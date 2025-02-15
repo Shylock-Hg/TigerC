@@ -22,5 +22,7 @@ pub fn compile_file(f: &str) {
     let mut e = parser.parse();
     escape::Escape::new().escape(&mut e);
     let mut ti = type_inference::TypeInference::new();
-    let _te = ti.infer(&e).unwrap();
+    let te = ti.infer(&e).unwrap();
+    let mut translator = translate::Translate::<amd64::FrameAmd64>::new();
+    let _ir = translator.translate(&te);
 }

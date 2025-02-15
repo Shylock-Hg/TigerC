@@ -139,6 +139,14 @@ pub struct Translate<F> {
 }
 
 impl<F: Frame + PartialEq + Eq> Translate<F> {
+    pub fn new() -> Self {
+        Self {
+            var_table: SymbolTable::new(),
+            fragments: Default::default(),
+            done_label: Stack::new(),
+        }
+    }
+
     pub fn translate(&mut self, ty_ast: &type_ast::TypeAst) -> ir::Exp {
         let level = Level::<F>::outermost();
         match ty_ast {
