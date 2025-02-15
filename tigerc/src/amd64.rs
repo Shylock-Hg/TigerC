@@ -248,17 +248,6 @@ impl Frame for FrameAmd64 {
         self.allocate_variable(var)
     }
 
-    fn access_var(var: &Variable, fp: ir::Exp) -> ir::Exp {
-        match var.access {
-            Access::Register(tp) => ir::Exp::Temp(tp),
-            Access::Frame(offset) => ir::Exp::Mem(Box::new(ir::Exp::BinOp {
-                left: Box::new(fp),
-                op: ir::BinOp::Plus,
-                right: Box::new(ir::Exp::Const(offset)),
-            })),
-        }
-    }
-
     fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement {
         let mut start_statements = vec![];
         let mut end_statements = vec![];
@@ -278,7 +267,7 @@ impl Frame for FrameAmd64 {
         let arg_registers_len = arg_registers.len();
         // save arguments from register
         for (formal, arg_register) in self.parameters.iter().zip(arg_registers) {
-            let destination = Self::access_var(formal, ir::Exp::Temp(Self::fp()));
+            let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
             start_statements.push(ir::Statement::Move {
                 dst: destination,
                 val: ir::Exp::Temp(arg_register),
@@ -286,7 +275,7 @@ impl Frame for FrameAmd64 {
         }
         // save arguments from frame
         for (index, formal) in self.parameters.iter().skip(arg_registers_len).enumerate() {
-            let destination = Self::access_var(formal, ir::Exp::Temp(Self::fp()));
+            let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
             start_statements.push(ir::Statement::Move {
                 dst: destination,
                 val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {

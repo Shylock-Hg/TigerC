@@ -795,7 +795,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     }
 
     fn translate_access_var(var: &frame::Variable, fp: ir::Exp) -> ir::Exp {
-        F::access_var(var, fp)
+        ir_gen::access_var(var, fp)
     }
 
     fn translate_return_value(exp: ir::Exp) -> Statement {
