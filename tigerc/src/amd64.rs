@@ -3,9 +3,9 @@ use std::sync::Once;
 use indexmap::IndexMap;
 
 use crate::frame::{Access, Frame, Variable};
-use crate::ident_pool;
 use crate::ir;
 use crate::temp::{Label, Temp};
+use crate::{ident_pool, ir_gen};
 
 // registers
 static mut RBP: Option<Temp> = None;
@@ -246,5 +246,78 @@ impl Frame for FrameAmd64 {
 
     fn allocate_local(&mut self, var: ir::Variable) -> Variable {
         self.allocate_variable(var)
+    }
+
+    fn access_var(var: &Variable, fp: ir::Exp) -> ir::Exp {
+        match var.access {
+            Access::Register(tp) => ir::Exp::Temp(tp),
+            Access::Frame(offset) => ir::Exp::Mem(Box::new(ir::Exp::BinOp {
+                left: Box::new(fp),
+                op: ir::BinOp::Plus,
+                right: Box::new(ir::Exp::Const(offset)),
+            })),
+        }
+    }
+
+    fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement {
+        let mut start_statements = vec![];
+        let mut end_statements = vec![];
+
+        let mut saved_register_locations = vec![];
+        for register in Self::callee_saved_registers().into_iter() {
+            let local = Temp::new();
+            let memory = ir::Exp::Temp(local);
+            saved_register_locations.push(memory.clone());
+            start_statements.push(ir::Statement::Move {
+                dst: memory,
+                val: ir::Exp::Temp(register),
+            });
+        }
+
+        let arg_registers = Self::arg_registers();
+        let arg_registers_len = arg_registers.len();
+        // save arguments from register
+        for (formal, arg_register) in self.parameters.iter().zip(arg_registers) {
+            let destination = Self::access_var(formal, ir::Exp::Temp(Self::fp()));
+            start_statements.push(ir::Statement::Move {
+                dst: destination,
+                val: ir::Exp::Temp(arg_register),
+            });
+        }
+        // save arguments from frame
+        for (index, formal) in self.parameters.iter().skip(arg_registers_len).enumerate() {
+            let destination = Self::access_var(formal, ir::Exp::Temp(Self::fp()));
+            start_statements.push(ir::Statement::Move {
+                dst: destination,
+                val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
+                    left: Box::new(ir::Exp::Temp(Self::fp())),
+                    op: ir::BinOp::Plus,
+                    right: Box::new(ir::Exp::Const(Self::word_size() * (index + 1) as i64)), // +1 to skip static_link
+                })),
+            });
+        }
+
+        for (register, location) in Self::callee_saved_registers()
+            .into_iter()
+            .zip(saved_register_locations)
+        {
+            end_statements.push(ir::Statement::Move {
+                dst: ir::Exp::Temp(register),
+                val: location,
+            });
+        }
+
+        let start_statement = ir_gen::combine_statements(start_statements);
+        let end_statement = ir_gen::combine_statements(end_statements);
+
+        let statement = ir::Statement::Seq {
+            s1: Box::new(start_statement),
+            s2: Box::new(statement),
+        };
+
+        ir::Statement::Seq {
+            s1: Box::new(statement),
+            s2: Box::new(end_statement),
+        }
     }
 }

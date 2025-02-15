@@ -13,6 +13,7 @@ use crate::ident_pool::Symbol;
 use crate::ir;
 use crate::ir::Statement;
 use crate::ir::Variable;
+use crate::ir_gen;
 use crate::stack::Stack;
 use crate::symbol_table::SymbolTable;
 use crate::temp::Label;
@@ -196,6 +197,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         } else {
             Self::translate_return_value(body)
         };
+        let body = new_level.current.borrow_mut().proc_entry_exit1(body);
         self.fragments.push(Fragment::<F>::Function {
             label: Label::new_named(f.name),
             frame: new_level.current.clone(),
@@ -269,7 +271,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             .filter(|v| v.is_some())
             .map(|v| v.unwrap())
             .collect();
-        let stmt = Self::combine_statements(decls);
+        let stmt = ir_gen::combine_statements(decls);
         let seq = self.translate_seq(level, &let_.sequence);
         self.var_table.end_scope();
         ir::Exp::ExpSeq {
@@ -706,7 +708,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     }
 
     fn translate_seq(&mut self, level: &Level<F>, seq: &Vec<type_ast::TypeExpr>) -> ir::Exp {
-        let mut s = Self::no_op();
+        let mut s = ir_gen::no_op();
         for e in &seq[0..seq.len() - 1] {
             s = ir::Statement::Seq {
                 s1: Box::new(s),
@@ -717,17 +719,6 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             stmt: Box::new(s),
             exp: Box::new(self.translate_expr(level, seq.last().unwrap())),
         }
-    }
-
-    fn combine_statements(stmts: Vec<ir::Statement>) -> ir::Statement {
-        let mut s = Self::no_op();
-        for e in stmts {
-            s = ir::Statement::Seq {
-                s1: Box::new(s),
-                s2: Box::new(e.clone()),
-            };
-        }
-        s
     }
 
     fn translate_value(&mut self, l: &ast::Value) -> ir::Exp {
@@ -804,14 +795,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     }
 
     fn translate_access_var(var: &frame::Variable, fp: ir::Exp) -> ir::Exp {
-        match var.access {
-            frame::Access::Register(tp) => ir::Exp::Temp(tp),
-            frame::Access::Frame(offset) => ir::Exp::Mem(Box::new(ir::Exp::BinOp {
-                left: Box::new(fp),
-                op: ir::BinOp::Plus,
-                right: Box::new(ir::Exp::Const(offset)),
-            })),
-        }
+        F::access_var(var, fp)
     }
 
     fn translate_return_value(exp: ir::Exp) -> Statement {
@@ -826,9 +810,5 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             func: Box::new(ir::Exp::Name(Label::new_named(name))),
             args,
         }
-    }
-
-    fn no_op() -> ir::Statement {
-        ir::Statement::Exp(ir::Exp::Const(0))
     }
 }

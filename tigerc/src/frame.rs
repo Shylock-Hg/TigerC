@@ -31,4 +31,8 @@ pub trait Frame {
     fn name(&self) -> &Label;
     fn parameters(&self) -> &[Variable];
     fn allocate_local(&mut self, var: ir::Variable) -> Variable;
+
+    fn access_var(var: &Variable, fp: ir::Exp) -> ir::Exp;
+
+    fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement;
 }
