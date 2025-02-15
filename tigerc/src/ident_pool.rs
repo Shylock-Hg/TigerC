@@ -37,7 +37,7 @@ pub mod kw {
 
 static IDENT_POOL: LazyLock<Mutex<IdentPool>> = LazyLock::new(|| Mutex::new(IdentPool::new()));
 
-pub fn create_symbol(ident: &str) -> Symbol {
+pub fn symbol(ident: &str) -> Symbol {
     IDENT_POOL.lock().unwrap().create(ident)
 }
 
@@ -52,7 +52,7 @@ pub struct Symbol(u32);
 
 impl Symbol {
     pub fn new(name: &str) -> Self {
-        create_symbol(name)
+        symbol(name)
     }
 }
 

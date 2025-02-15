@@ -207,7 +207,7 @@ impl Frame for FrameAmd64 {
         // for the static link.
         let mut parameters = parameters;
         parameters.insert(
-            ir::LowerIdent::new(ident_pool::create_symbol("__static_link")),
+            ir::LowerIdent::new(ident_pool::symbol("__static_link")),
             ir::Variable(true),
         );
 

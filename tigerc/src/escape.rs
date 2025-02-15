@@ -188,30 +188,30 @@ mod tests {
         let expected = ast::Ast::Expr(ast::Expr::Let(ast::Let {
             decls: vec![
                 ast::Decl::Type(ast::TypeDecl {
-                    type_name: ident_pool::create_symbol("r1"),
+                    type_name: ident_pool::symbol("r1"),
                     ty: ast::Ty::Record(ast::TyRecord(vec![
                         ast::Field {
-                            name: ident_pool::create_symbol("f1"),
-                            ty: ident_pool::create_symbol("int"),
+                            name: ident_pool::symbol("f1"),
+                            ty: ident_pool::symbol("int"),
                         },
                         ast::Field {
-                            name: ident_pool::create_symbol("f2"),
-                            ty: ident_pool::create_symbol("string"),
+                            name: ident_pool::symbol("f2"),
+                            ty: ident_pool::symbol("string"),
                         },
                     ])),
                 }),
                 ast::Decl::Var(ast::VarDecl {
-                    name: ident_pool::create_symbol("v1"),
+                    name: ident_pool::symbol("v1"),
                     ty: None,
                     init: ast::Expr::RecordExpr(ast::RecordExpr {
-                        ty: ident_pool::create_symbol("r1"),
+                        ty: ident_pool::symbol("r1"),
                         init: vec![
                             (
-                                ident_pool::create_symbol("f1"),
+                                ident_pool::symbol("f1"),
                                 ast::Expr::Literal(ast::Value::Int(1)),
                             ),
                             (
-                                ident_pool::create_symbol("f2"),
+                                ident_pool::symbol("f2"),
                                 ast::Expr::Literal(ast::Value::Str("hello".to_owned())),
                             ),
                         ],

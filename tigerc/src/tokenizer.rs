@@ -173,7 +173,7 @@ impl cursor::Cursor<'_> {
                     let mut ident = String::new();
                     ident.push(c);
                     self.ident_continue(&mut ident);
-                    Token::Ident(ident_pool::create_symbol(&ident))
+                    Token::Ident(ident_pool::symbol(&ident))
                 }
                 _ => Token::Error(Error::UnknownChar),
             }

@@ -137,50 +137,50 @@ impl TypeInference {
         );
         let mut var_table = SymbolTable::new();
         var_table.insert_symbol(
-            ident_pool::create_symbol("print"),
+            ident_pool::symbol("print"),
             SymbolValue {
                 ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("print"),
+                    name: ident_pool::symbol("print"),
                     params: vec![type_ast::Type::Str],
                     return_ty: Box::new(type_ast::Type::Nothing),
                 }),
             },
         );
         var_table.insert_symbol(
-            ident_pool::create_symbol("getchar"),
+            ident_pool::symbol("getchar"),
             SymbolValue {
                 ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("getchar"),
+                    name: ident_pool::symbol("getchar"),
                     params: vec![],
                     return_ty: Box::new(type_ast::Type::Str),
                 }),
             },
         );
         var_table.insert_symbol(
-            ident_pool::create_symbol("flush"),
+            ident_pool::symbol("flush"),
             SymbolValue {
                 ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("flush"),
+                    name: ident_pool::symbol("flush"),
                     params: vec![],
                     return_ty: Box::new(type_ast::Type::Nothing),
                 }),
             },
         );
         var_table.insert_symbol(
-            ident_pool::create_symbol("ord"),
+            ident_pool::symbol("ord"),
             SymbolValue {
                 ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("ord"),
+                    name: ident_pool::symbol("ord"),
                     params: vec![type_ast::Type::Str],
                     return_ty: Box::new(type_ast::Type::Int),
                 }),
             },
         );
         var_table.insert_symbol(
-            ident_pool::create_symbol("chr"),
+            ident_pool::symbol("chr"),
             SymbolValue {
                 ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::create_symbol("chr"),
+                    name: ident_pool::symbol("chr"),
                     params: vec![type_ast::Type::Int],
                     return_ty: Box::new(type_ast::Type::Str),
                 }),
@@ -975,13 +975,13 @@ mod tests {
             ty: type_ast::Type::Nothing,
             expr: type_ast::TypeExpr_::Let(type_ast::Let {
                 decls: vec![type_ast::TypeDecl::Type(type_ast::TyDecl {
-                    type_name: ident_pool::create_symbol("list"),
+                    type_name: ident_pool::symbol("list"),
                     ty: type_ast::Type::Record(type_ast::Record {
                         fields: vec![
-                            (ident_pool::create_symbol("num"), type_ast::Type::Int),
+                            (ident_pool::symbol("num"), type_ast::Type::Int),
                             (
-                                ident_pool::create_symbol("rest"),
-                                type_ast::Type::Name(ident_pool::create_symbol("list")),
+                                ident_pool::symbol("rest"),
+                                type_ast::Type::Name(ident_pool::symbol("list")),
                             ),
                         ]
                         .into_iter()
@@ -1012,9 +1012,9 @@ mod tests {
             ty: type_ast::Type::Int,
             expr: type_ast::TypeExpr_::Let(type_ast::Let {
                 decls: vec![type_ast::TypeDecl::Func(type_ast::FuncDecl {
-                    name: ident_pool::create_symbol("f"),
+                    name: ident_pool::symbol("f"),
                     args: [(
-                        ident_pool::create_symbol("x"),
+                        ident_pool::symbol("x"),
                         type_ast::Parameter {
                             ty: type_ast::Type::Int,
                             escape: false,
@@ -1034,7 +1034,7 @@ mod tests {
                                         expr: type_ast::TypeExpr_::LeftValue(type_ast::LeftValue {
                                             ty: type_ast::Type::Int,
                                             left: type_ast::LeftValue_::Variable(
-                                                ident_pool::create_symbol("x"),
+                                                ident_pool::symbol("x"),
                                             ),
                                         }),
                                     }),
@@ -1051,7 +1051,7 @@ mod tests {
                             el: Box::new(type_ast::TypeExpr {
                                 ty: type_ast::Type::Int,
                                 expr: type_ast::TypeExpr_::FuncCall(
-                                    ident_pool::create_symbol("f"),
+                                    ident_pool::symbol("f"),
                                     vec![type_ast::TypeExpr {
                                         ty: type_ast::Type::Int,
                                         expr: type_ast::TypeExpr_::Binary(type_ast::Binary::Minus(
@@ -1061,7 +1061,7 @@ mod tests {
                                                     type_ast::LeftValue {
                                                         ty: type_ast::Type::Int,
                                                         left: type_ast::LeftValue_::Variable(
-                                                            ident_pool::create_symbol("x"),
+                                                            ident_pool::symbol("x"),
                                                         ),
                                                     },
                                                 ),
@@ -1082,7 +1082,7 @@ mod tests {
                 sequence: vec![type_ast::TypeExpr {
                     ty: type_ast::Type::Int,
                     expr: type_ast::TypeExpr_::FuncCall(
-                        ident_pool::create_symbol("f"),
+                        ident_pool::symbol("f"),
                         vec![type_ast::TypeExpr {
                             ty: type_ast::Type::Int,
                             expr: type_ast::TypeExpr_::Literal(ast::Value::Int(10)),

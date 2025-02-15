@@ -983,7 +983,7 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         let expected = ast::Expr::Assign(
-            ast::LeftValue::Variable(ident_pool::create_symbol("a")),
+            ast::LeftValue::Variable(ident_pool::symbol("a")),
             Box::new(ast::Expr::Literal(ast::Value::Int(1))),
         );
         assert_eq!(e, expected);
@@ -1050,7 +1050,7 @@ mod tests {
         let expected = ast::Expr::While(ast::While {
             condition: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
             body: Box::new(ast::Expr::Assign(
-                ast::LeftValue::Variable(ident_pool::create_symbol("var1")),
+                ast::LeftValue::Variable(ident_pool::symbol("var1")),
                 Box::new(ast::Expr::Literal(ast::Value::Int(3))),
             )),
         });
@@ -1066,11 +1066,11 @@ mod tests {
         let mut parser = Parser::new(Box::new(it));
         let e = parser.parse_expr();
         let expected = ast::Expr::For(ast::For {
-            local: ident_pool::create_symbol("it"),
+            local: ident_pool::symbol("it"),
             lower: Box::new(ast::Expr::Literal(ast::Value::Int(1))),
             upper: Box::new(ast::Expr::Literal(ast::Value::Int(10))),
             body: Box::new(ast::Expr::Assign(
-                ast::LeftValue::Variable(ident_pool::create_symbol("var1")),
+                ast::LeftValue::Variable(ident_pool::symbol("var1")),
                 Box::new(ast::Expr::Literal(ast::Value::Int(3))),
             )),
         });
@@ -1100,13 +1100,13 @@ mod tests {
         let expected = ast::Expr::Let(ast::Let {
             decls: vec![
                 ast::Decl::Var(ast::VarDecl::new(
-                    ident_pool::create_symbol("b"),
+                    ident_pool::symbol("b"),
                     None,
                     ast::Expr::Literal(ast::Value::Int(1)),
                 )),
                 ast::Decl::Type(ast::TypeDecl {
-                    type_name: ident_pool::create_symbol("t1"),
-                    ty: ast::Ty::Name(ident_pool::create_symbol("t2")),
+                    type_name: ident_pool::symbol("t1"),
+                    ty: ast::Ty::Name(ident_pool::symbol("t2")),
                 }),
             ],
             sequence: vec![

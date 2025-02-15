@@ -55,7 +55,7 @@ impl<F: Frame> Level<F> {
     pub fn outermost() -> Level<F> {
         Level {
             current: Rc::new(RefCell::new(F::new(
-                Label::new_named(ident_pool::create_symbol("__main")),
+                Label::new_named(ident_pool::symbol("__main")),
                 Default::default(),
             ))),
             parent: None,
@@ -594,7 +594,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
 
     fn malloc(size: ir::Exp) -> ir::Exp {
         let args = vec![size];
-        Self::translate_function_call(ident_pool::create_symbol("malloc"), args)
+        Self::translate_function_call(ident_pool::symbol("malloc"), args)
     }
 
     fn translate_record_ctor(&mut self, level: &Level<F>, r: &type_ast::RecordExpr) -> ir::Exp {
@@ -654,7 +654,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::Binary::Eq(l, r) => {
                 if let type_ast::Type::Str = l.ty {
                     let args = vec![self.translate_expr(level, l), self.translate_expr(level, r)];
-                    Self::translate_function_call(ident_pool::create_symbol("stringEqual"), args)
+                    Self::translate_function_call(ident_pool::symbol("stringEqual"), args)
                 } else {
                     translate_relation_op!(self, level, l, ir::CompareOp::Eq, r)
                 }
@@ -662,10 +662,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::Binary::Ne(l, r) => {
                 if let type_ast::Type::Str = l.ty {
                     let args = vec![self.translate_expr(level, l), self.translate_expr(level, r)];
-                    let eq = Self::translate_function_call(
-                        ident_pool::create_symbol("stringEqual"),
-                        args,
-                    );
+                    let eq = Self::translate_function_call(ident_pool::symbol("stringEqual"), args);
                     ir::Exp::BinOp {
                         op: ir::BinOp::Minus,
                         left: Box::new(ir::Exp::Const(1)),

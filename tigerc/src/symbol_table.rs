@@ -89,9 +89,9 @@ mod tests {
     #[test]
     fn test_symbol_table() {
         let mut table = SymbolTable::new();
-        let symbol1 = ident_pool::create_symbol("s1");
-        let symbol2 = ident_pool::create_symbol("s2");
-        let symbol3 = ident_pool::create_symbol("s3");
+        let symbol1 = ident_pool::symbol("s1");
+        let symbol2 = ident_pool::symbol("s2");
+        let symbol3 = ident_pool::symbol("s3");
         table.begin_scope();
         table.insert_symbol(symbol1, 1);
         table.insert_symbol(symbol2, 2);
@@ -120,9 +120,9 @@ mod tests {
     #[test]
     fn test_symbol_table_shadow() {
         let mut table = SymbolTable::new();
-        let symbol1 = ident_pool::create_symbol("s1");
-        let symbol2 = ident_pool::create_symbol("s2");
-        let symbol3 = ident_pool::create_symbol("s3");
+        let symbol1 = ident_pool::symbol("s1");
+        let symbol2 = ident_pool::symbol("s2");
+        let symbol3 = ident_pool::symbol("s3");
 
         table.begin_scope();
         table.insert_symbol(symbol1, 1);
