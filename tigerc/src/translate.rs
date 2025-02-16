@@ -157,10 +157,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
 
     pub fn translate(&mut self, ty_ast: &type_ast::TypeAst) -> ir::Exp {
         let level = Level::<F>::outermost();
-        match ty_ast {
-            type_ast::TypeAst::TypeDecl(decl) => unreachable!(),
-            type_ast::TypeAst::TypeExpr(exp) => self.translate_expr(&level, exp),
-        }
+        self.translate_expr(&level, &ty_ast.0)
     }
 
     fn translate_decl(&mut self, level: &Level<F>, decl: &type_ast::TypeDecl) -> Option<Statement> {

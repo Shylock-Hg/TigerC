@@ -45,10 +45,7 @@ pub struct Function {
 // typed AST...
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TypeAst {
-    TypeDecl(TypeDecl),
-    TypeExpr(TypeExpr),
-}
+pub struct TypeAst(pub TypeExpr);
 
 use crate::ast::Value;
 

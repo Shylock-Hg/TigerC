@@ -193,7 +193,7 @@ impl TypeInference {
     }
 
     pub fn infer(&mut self, ast: &ast::Ast) -> Result<type_ast::TypeAst> {
-        Ok(type_ast::TypeAst::TypeExpr(self.infer_expr(&ast.0)?))
+        Ok(type_ast::TypeAst(self.infer_expr(&ast.0)?))
     }
 
     // TODO maybe return void
@@ -786,11 +786,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Nothing);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Nothing);
     }
 
     #[test]
@@ -803,11 +799,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Nil);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Nil);
     }
 
     #[test]
@@ -820,11 +812,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Int);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Int);
     }
 
     #[test]
@@ -837,11 +825,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Int);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Int);
     }
 
     #[test]
@@ -854,11 +838,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Int);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Int);
     }
 
     #[test]
@@ -871,11 +851,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Int);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Int);
     }
 
     #[test]
@@ -888,11 +864,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Int);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Int);
     }
 
     #[test]
@@ -905,11 +877,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Nothing);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Nothing);
     }
 
     #[test]
@@ -922,11 +890,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        if let type_ast::TypeAst::TypeExpr(te) = te {
-            assert_eq!(te.ty, type_ast::Type::Nothing);
-        } else {
-            panic!("Unexpected decl.");
-        }
+        assert_eq!(te.0.ty, type_ast::Type::Nothing);
     }
 
     #[test]
@@ -968,7 +932,7 @@ mod tests {
         let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        let expected = type_ast::TypeAst::TypeExpr(type_ast::TypeExpr {
+        let expected = type_ast::TypeAst(type_ast::TypeExpr {
             ty: type_ast::Type::Nothing,
             expr: type_ast::TypeExpr_::Let(type_ast::Let {
                 decls: vec![type_ast::TypeDecl::Type(type_ast::TyDecl {
@@ -1005,7 +969,7 @@ mod tests {
         let e = dbg!(parser.parse());
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
-        let expected = type_ast::TypeAst::TypeExpr(type_ast::TypeExpr {
+        let expected = type_ast::TypeAst(type_ast::TypeExpr {
             ty: type_ast::Type::Int,
             expr: type_ast::TypeExpr_::Let(type_ast::Let {
                 decls: vec![type_ast::TypeDecl::Func(type_ast::FuncDecl {
