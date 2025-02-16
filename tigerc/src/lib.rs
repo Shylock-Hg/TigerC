@@ -32,13 +32,17 @@ pub fn compile_file(f: &str) {
     let start = ir::Statement::Exp(ir);
     let regular_start = canon::canonicalize(start);
     let fragments = translator.fragments();
-    let fragments = fragments.into_iter().map(|f| {
-        if let Fragment::Function { label, frame, body } = f {
-            let regular_stmts = canon::canonicalize(body.clone());
-            println!("{:?}: {:?}", label, regular_stmts);
-            Fragment::Function { label, frame, body }
-        } else {
-            f
-        }
-    });
+    let fragments = fragments
+        .into_iter()
+        .map(|f| {
+            if let Fragment::Function { label, frame, body } = f {
+                let regular_stmts = canon::canonicalize(body.clone());
+                println!("{:?}: {:?}", label, regular_stmts);
+                Fragment::Function { label, frame, body }
+            } else {
+                println!("StringFragment");
+                f
+            }
+        })
+        .collect::<Vec<_>>();
 }

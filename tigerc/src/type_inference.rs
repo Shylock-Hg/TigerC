@@ -966,7 +966,7 @@ mod tests {
         ";
         let it = tokenize(doc);
         let mut parser = Parser::new(Box::new(it));
-        let e = dbg!(parser.parse());
+        let e = parser.parse();
         let mut ti = TypeInference::new();
         let te = ti.infer(&e).unwrap();
         let expected = type_ast::TypeAst(type_ast::TypeExpr {
