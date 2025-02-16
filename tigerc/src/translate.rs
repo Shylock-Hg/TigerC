@@ -69,7 +69,7 @@ struct VarEntry<F> {
     var: frame::Variable,
 }
 
-enum Fragment<F: Frame> {
+pub enum Fragment<F: Frame> {
     Function {
         label: Label,
         frame: Rc<RefCell<F>>,
@@ -135,7 +135,6 @@ macro_rules! translate_relation_op {
 
 pub struct Translate<F: Frame> {
     // the level variable defined in
-    // TODO use HashMap<Temp, VarEntry<F>>
     var_table: SymbolTable<VarEntry<F>>,
     fragments: Vec<Fragment<F>>,
 
@@ -150,6 +149,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             fragments: Default::default(),
             done_label: Stack::new(),
         }
+    }
+
+    pub fn fragments(self) -> Vec<Fragment<F>> {
+        self.fragments
     }
 
     pub fn translate(&mut self, ty_ast: &type_ast::TypeAst) -> ir::Exp {
