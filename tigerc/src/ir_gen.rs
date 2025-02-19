@@ -13,7 +13,7 @@ pub fn combine_statements(stmts: Vec<ir::Statement>) -> ir::Statement {
     for e in stmts {
         s = ir::Statement::Seq {
             s1: Box::new(s),
-            s2: Box::new(e.clone()),
+            s2: Box::new(e),
         };
     }
     s
