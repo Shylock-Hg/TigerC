@@ -1,9 +1,12 @@
 use std::vec;
 
-use crate::{ir, ir_gen, temp::Temp};
+use crate::{
+    ir, ir_gen,
+    temp::{Label, Temp},
+};
 
-pub fn canonicalize(stmt: ir::Statement) -> Vec<ir::Statement> {
-    linearize(stmt)
+pub fn canonicalize(stmt: ir::Statement) -> Vec<Block> {
+    basic_block(linearize(stmt))
 }
 
 // The result will fit two properties:
@@ -156,4 +159,69 @@ fn commute(stmt: &ir::Statement, exp: &ir::Exp) -> bool {
         | (_, ir::Exp::Name(_)) => true,
         _ => false,
     }
+}
+
+// The first statement is a LABEL.
+// The last statement is a JUMP or CJUMP.
+// There are no other LABELs, JUMPs, or CJUMPs.
+#[derive(Debug)]
+pub struct Block(Vec<ir::Statement>);
+
+impl Block {
+    pub fn new(label: Label) -> Self {
+        Self(vec![ir::Statement::Label(label)])
+    }
+
+    pub fn push(&mut self, stmt: ir::Statement) {
+        self.0.push(stmt);
+    }
+
+    pub fn finish(mut self, stmt: ir::Statement) -> Self {
+        debug_assert!(matches!(
+            stmt,
+            ir::Statement::Jump { .. } | ir::Statement::CJump { .. }
+        ));
+        self.0.push(stmt);
+        self
+    }
+}
+
+fn basic_block(stmts: Vec<ir::Statement>) -> Vec<Block> {
+    let mut blocks = vec![];
+    let mut block: Option<Block> = None;
+    for stmt in stmts {
+        match stmt {
+            ir::Statement::Label(l) => {
+                if let Some(ref mut b) = block {
+                    let jump = ir::Statement::Jump {
+                        exp: ir::Exp::Name(l),
+                        labels: vec![l],
+                    };
+                    // TODO call finish here
+                    b.push(jump);
+                    blocks.push(block.take().unwrap());
+                } else {
+                    block = Some(Block::new(l));
+                }
+            }
+            ir::Statement::Seq { .. } => unreachable!(),
+            ir::Statement::CJump { .. } | ir::Statement::Jump { .. } => {
+                if let Some(ref mut block) = block {
+                    // TODO call finish here
+                    block.push(stmt);
+                } else {
+                    unreachable!();
+                }
+                blocks.push(block.take().unwrap());
+            }
+            ir::Statement::Exp(..) | ir::Statement::Move { .. } => {
+                if let Some(ref mut block) = block {
+                    block.push(stmt);
+                } else {
+                    block = Some(Block::new(Label::new()));
+                }
+            }
+        }
+    }
+    blocks
 }
