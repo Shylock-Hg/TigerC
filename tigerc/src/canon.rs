@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub fn canonicalize(stmt: ir::Statement) -> Vec<Block> {
-    basic_block(linearize(stmt))
+    basic_block(linearize(stmt)).0
 }
 
 // The result will fit two properties:
@@ -186,7 +186,8 @@ impl Block {
     }
 }
 
-fn basic_block(stmts: Vec<ir::Statement>) -> Vec<Block> {
+fn basic_block(stmts: Vec<ir::Statement>) -> (Vec<Block>, Label) {
+    let done_label = Label::new();
     let mut blocks = vec![];
     let mut block: Option<Block> = None;
     for stmt in stmts {
@@ -223,5 +224,10 @@ fn basic_block(stmts: Vec<ir::Statement>) -> Vec<Block> {
             }
         }
     }
-    blocks
+    if block.is_some() {
+        blocks.push(block.take().unwrap());
+    }
+    // jump to end of function, avoid later reorder violate this
+    blocks.last_mut().unwrap().push(ir::Statement::Jump { exp: ir::Exp::Name(done_label), labels: vec![done_label] });
+    (blocks, done_label)
 }
