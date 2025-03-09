@@ -184,6 +184,15 @@ impl Block {
         self.0.push(stmt);
         self
     }
+
+    // filter unused statements
+    // a naive implementation, in fact, we can remove all pure expression which result is unused
+    pub fn filter_unused(&mut self) {
+        self.0.retain(|s| match s {
+            ir::Statement::Exp(ir::Exp::Const(_)) => false,
+            _ => true,
+        });
+    }
 }
 
 fn basic_block(stmts: Vec<ir::Statement>) -> (Vec<Block>, Label) {
@@ -228,6 +237,20 @@ fn basic_block(stmts: Vec<ir::Statement>) -> (Vec<Block>, Label) {
         blocks.push(block.take().unwrap());
     }
     // jump to end of function, avoid later reorder violate this
-    blocks.last_mut().unwrap().push(ir::Statement::Jump { exp: ir::Exp::Name(done_label), labels: vec![done_label] });
-    (blocks, done_label)
+    blocks.last_mut().unwrap().push(ir::Statement::Jump {
+        exp: ir::Exp::Name(done_label),
+        labels: vec![done_label],
+    });
+    (clean(blocks), done_label)
+}
+
+// clean unused statements
+fn clean(blocks: Vec<Block>) -> Vec<Block> {
+    blocks
+        .into_iter()
+        .map(|mut block| {
+            block.filter_unused();
+            block
+        })
+        .collect::<Vec<_>>()
 }
