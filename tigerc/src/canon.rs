@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::vec;
 
 use crate::{
@@ -253,4 +254,55 @@ fn clean(blocks: Vec<Block>) -> Vec<Block> {
             block
         })
         .collect::<Vec<_>>()
+}
+
+struct Trace {
+    pub blocks: Vec<Block>,
+    // index of block
+    pub traces: Vec<Vec<usize>>,
+}
+
+fn trace_schedule(blocks: Vec<Block>) -> Trace {
+    let label_index = blocks
+        .iter()
+        .enumerate()
+        .map(|(i, b)| match b.0.first().unwrap() {
+            ir::Statement::Label(l) => (l.clone(), i),
+            _ => unreachable!(),
+        })
+        .collect::<HashMap<_, _>>();
+
+    let mut marks = vec![false; blocks.len()];
+    let mut traces = vec![];
+    for (mut i, block) in blocks.iter().enumerate() {
+        let mut current_trace = vec![];
+        while !marks[i] {
+            current_trace.push(i);
+            marks[i] = true;
+
+            let next = match block.0.last().unwrap() {
+                ir::Statement::Jump { exp, .. } => {
+                    let label = match exp {
+                        ir::Exp::Name(l) => l,
+                        _ => unreachable!(),
+                    };
+                    let next = label_index.get(label).unwrap();
+                    *next
+                }
+                ir::Statement::CJump { then, else_, .. } => {
+                    let next = label_index.get(else_).unwrap();
+                    if !marks[*next] {
+                        *next
+                    } else {
+                        let next = label_index.get(then).unwrap();
+                        *next
+                    }
+                }
+                _ => unreachable!(),
+            };
+            i = next;
+        }
+        traces.push(current_trace);
+    }
+    Trace { blocks, traces }
 }
