@@ -36,8 +36,9 @@ pub fn compile_file(f: &str) {
         .into_iter()
         .map(|f| {
             if let Fragment::Function { label, frame, body } = f {
+                println!("origin statement: {:#?}", body);
                 let regular_stmts = canon::canonicalize(body.clone());
-                println!("{:?}: {:?}", label, regular_stmts);
+                println!("{:?}: {:?}", label, regular_stmts.0.blocks);
                 Fragment::Function { label, frame, body }
             } else {
                 println!("StringFragment");

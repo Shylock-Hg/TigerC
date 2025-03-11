@@ -6,8 +6,10 @@ use crate::{
     temp::{Label, Temp},
 };
 
-pub fn canonicalize(stmt: ir::Statement) -> Vec<Block> {
-    basic_block(linearize(stmt)).0
+pub fn canonicalize(stmt: ir::Statement) -> (Trace, Label) {
+    let (blocks, done_label) = basic_block(linearize(stmt));
+    let trace = trace_schedule(blocks, done_label);
+    (trace, done_label)
 }
 
 // The result will fit two properties:
@@ -211,9 +213,8 @@ fn basic_block(stmts: Vec<ir::Statement>) -> (Vec<Block>, Label) {
                     // TODO call finish here
                     b.push(jump);
                     blocks.push(block.take().unwrap());
-                } else {
-                    block = Some(Block::new(l));
                 }
+                block = Some(Block::new(l));
             }
             ir::Statement::Seq { .. } => unreachable!(),
             ir::Statement::CJump { .. } | ir::Statement::Jump { .. } => {
@@ -256,14 +257,14 @@ fn clean(blocks: Vec<Block>) -> Vec<Block> {
         .collect::<Vec<_>>()
 }
 
-struct Trace {
+pub struct Trace {
     pub blocks: Vec<Block>,
     // index of block
     pub traces: Vec<Vec<usize>>,
 }
 
-fn trace_schedule(blocks: Vec<Block>) -> Trace {
-    let label_index = blocks
+fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
+    let mut label_index = blocks
         .iter()
         .enumerate()
         .map(|(i, b)| match b.0.first().unwrap() {
@@ -271,12 +272,22 @@ fn trace_schedule(blocks: Vec<Block>) -> Trace {
             _ => unreachable!(),
         })
         .collect::<HashMap<_, _>>();
+    const END_INDEX: usize = usize::MAX;
+    label_index.insert(done_label, END_INDEX);
+
+    fn mark(marks: &Vec<bool>, index: usize) -> bool {
+        if index == END_INDEX {
+            true
+        } else {
+            marks[index]
+        }
+    }
 
     let mut marks = vec![false; blocks.len()];
     let mut traces = vec![];
     for (mut i, block) in blocks.iter().enumerate() {
         let mut current_trace = vec![];
-        while !marks[i] {
+        while !mark(&marks, i) {
             current_trace.push(i);
             marks[i] = true;
 
@@ -291,7 +302,7 @@ fn trace_schedule(blocks: Vec<Block>) -> Trace {
                 }
                 ir::Statement::CJump { then, else_, .. } => {
                     let next = label_index.get(else_).unwrap();
-                    if !marks[*next] {
+                    if !mark(&marks, *next) {
                         *next
                     } else {
                         let next = label_index.get(then).unwrap();
