@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::vec;
+use std::{collections::HashMap, mem::swap};
 
 use crate::{
     ir, ir_gen,
@@ -167,7 +167,7 @@ fn commute(stmt: &ir::Statement, exp: &ir::Exp) -> bool {
 // The first statement is a LABEL.
 // The last statement is a JUMP or CJUMP.
 // There are no other LABELs, JUMPs, or CJUMPs.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Block(Vec<ir::Statement>);
 
 impl Block {
@@ -259,8 +259,6 @@ fn clean(blocks: Vec<Block>) -> Vec<Block> {
 
 pub struct Trace {
     pub blocks: Vec<Block>,
-    // index of block
-    pub traces: Vec<Vec<usize>>,
 }
 
 fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
@@ -315,5 +313,66 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
         }
         traces.push(current_trace);
     }
-    Trace { blocks, traces }
+
+    // Put else branch be successor of cjump
+    let mut new_blocks = Vec::with_capacity(blocks.len());
+    let traces = traces
+        .into_iter()
+        .flat_map(|t| t.into_iter())
+        .collect::<Vec<_>>();
+    for i in 0..traces.len() {
+        let current = &traces[i];
+        debug_assert!(mark(&marks, *current));
+        let next = traces.get(i + 1);
+        // TODO avoid clone
+        let mut current_block = blocks[*current].clone();
+        match current_block.0.last_mut().unwrap() {
+            ir::Statement::Jump { .. } => {
+                // do nothing
+                // TODO maybe we can merge block if next block be only jumped from this
+            }
+            ir::Statement::CJump {
+                left,
+                right,
+                then,
+                else_,
+                ..
+            } => {
+                if let Some(next) = next {
+                    let next_block = &blocks[*next];
+                    if let ir::Statement::Label(label) = next_block.0.first().unwrap() {
+                        if label == then {
+                            // reverse condition, keep else branch be successor
+                            swap(left, right);
+                            swap(then, else_);
+                        } else if label == else_ {
+                            // do nothing
+                        } else {
+                            let new_else = Label::new();
+                            *else_ = new_else;
+                            let mut new_block = Block::new(new_else);
+                            new_block.push(ir::Statement::Jump {
+                                exp: ir::Exp::Name(*label),
+                                labels: vec![*label],
+                            });
+                            new_blocks.push(new_block);
+                        }
+                    } else {
+                        unreachable!();
+                    }
+                }
+            }
+            _ => unreachable!(),
+        }
+        new_blocks.push(current_block);
+    }
+    Trace { blocks: new_blocks }
+}
+
+#[allow(unused)]
+fn debug_trace(blocks: &Vec<Block>, traces: &Vec<usize>) {
+    println!("trace:");
+    for i in traces {
+        println!("{:#?}", blocks[*i].0);
+    }
 }
