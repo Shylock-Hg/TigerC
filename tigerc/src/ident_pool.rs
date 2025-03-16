@@ -27,7 +27,7 @@ symbols! {
         TOK_IN: "in",
         TOK_END: "end",
         // use for inner symbol
-        REVERSED_ANONYMOUS: "__anonymous",
+        REVERSED_ANONYMOUS: "_anon",
     }
 }
 
