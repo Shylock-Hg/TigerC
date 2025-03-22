@@ -1,4 +1,3 @@
-use core::num;
 use std::hash::Hash;
 
 use crate::ident_pool::{kw, Symbol};
@@ -38,6 +37,17 @@ impl LowerIdent {
 
     pub fn new_named(name: Symbol) -> LowerIdent {
         LowerIdent::Name(name)
+    }
+}
+
+impl ToString for LowerIdent {
+    fn to_string(&self) -> String {
+        match self {
+            LowerIdent::Number { number, .. } => {
+                format!("{}", number)
+            }
+            LowerIdent::Name(symbol) => symbol.to_string(),
+        }
     }
 }
 

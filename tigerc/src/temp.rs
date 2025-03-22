@@ -15,6 +15,12 @@ impl Temp {
     }
 }
 
+impl ToString for Temp {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
 // for function or code block location
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Label(pub LowerIdent);

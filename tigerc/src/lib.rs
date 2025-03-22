@@ -1,6 +1,7 @@
 use translate::Fragment;
 
 pub mod amd64;
+pub mod asm;
 pub mod ast;
 pub mod canon;
 pub mod cursor;
