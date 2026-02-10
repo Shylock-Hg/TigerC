@@ -1,10 +1,22 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::vec;
 use std::{collections::HashMap, mem::swap};
 
 use crate::{
+    frame::Frame,
     ir, ir_gen,
     temp::{Label, Temp},
 };
+
+pub enum Fragment<F: Frame> {
+    Function {
+        label: Label,
+        frame: Rc<RefCell<F>>,
+        body: (Trace, Label),
+    },
+    StringLiteral(Label, String),
+}
 
 pub fn canonicalize(stmt: ir::Statement) -> (Trace, Label) {
     let (blocks, done_label) = basic_block(linearize(stmt));

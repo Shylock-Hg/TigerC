@@ -35,15 +35,20 @@ pub fn compile_file(f: &str) {
     let fragments = translator.fragments();
     let fragments = fragments
         .into_iter()
-        .map(|f| {
-            if let Fragment::Function { label, frame, body } = f {
+        .map(|f| match f {
+            Fragment::Function { label, frame, body } => {
                 println!("origin statement: {:#?}", body);
-                let regular_stmts = canon::canonicalize(body.clone());
+                let regular_stmts = canon::canonicalize(body);
                 println!("{:?}: {:?}", label, regular_stmts.0.blocks);
-                Fragment::Function { label, frame, body }
-            } else {
+                canon::Fragment::Function {
+                    label,
+                    frame,
+                    body: regular_stmts,
+                }
+            }
+            Fragment::StringLiteral(label, val) => {
                 println!("StringFragment");
-                f
+                canon::Fragment::StringLiteral(label, val)
             }
         })
         .collect::<Vec<_>>();
