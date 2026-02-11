@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::ident_pool::Symbol;
 use crate::ir::LowerIdent;
 
@@ -32,5 +34,11 @@ impl Label {
 
     pub fn new_named(name: Symbol) -> Self {
         Label(LowerIdent::new_named(name))
+    }
+}
+
+impl Display for Label {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

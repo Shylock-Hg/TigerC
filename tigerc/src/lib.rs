@@ -1,7 +1,12 @@
+use std::io::Write;
+
 use translate::Fragment;
+
+use crate::amd64::FrameAmd64;
 
 pub mod amd64;
 pub mod asm;
+pub mod asm_gen;
 pub mod ast;
 pub mod canon;
 pub mod cursor;
@@ -20,7 +25,7 @@ pub mod translate;
 pub mod type_ast;
 pub mod type_inference;
 
-pub fn compile_file(f: &str) {
+pub fn compile_file(f: &str, output_asm: &str) {
     let content = std::fs::read_to_string(f).unwrap();
     let it = tokenizer::tokenize(&content);
     let mut parser = parser::Parser::new(Box::new(it));
@@ -29,9 +34,7 @@ pub fn compile_file(f: &str) {
     let mut ti = type_inference::TypeInference::new();
     let te = ti.infer(&e).unwrap();
     let mut translator = translate::Translate::<amd64::FrameAmd64>::new();
-    let ir = translator.translate(&te);
-    let start = ir::Statement::Exp(ir);
-    let regular_start = canon::canonicalize(start);
+    translator.translate(&te);
     let fragments = translator.fragments();
     let fragments = fragments
         .into_iter()
@@ -52,4 +55,26 @@ pub fn compile_file(f: &str) {
             }
         })
         .collect::<Vec<_>>();
+
+    let mut output_asm = std::fs::File::create(output_asm).unwrap();
+    writeln!(output_asm, "global main").unwrap();
+    writeln!(output_asm, "section .rodata").unwrap();
+    fragments.iter().for_each(|f| match f {
+        canon::Fragment::Function { .. } => (),
+        canon::Fragment::StringLiteral(label, val) => {
+            // 0 for c-style compatible
+            writeln!(output_asm, "{}: db \"{}\", 0", label, val).unwrap();
+        }
+    });
+
+    writeln!(output_asm, "section .text").unwrap();
+    fragments.into_iter().for_each(|f| match f {
+        canon::Fragment::Function { label, frame, body } => {
+            let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new();
+            gen.munch_trace(body.0);
+            // TODO proc_entry_exit2
+            Some(asm::InstructionList::new(gen.result(), body.1));
+        }
+        canon::Fragment::StringLiteral(..) => (),
+    });
 }

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::hash::Hash;
 
 use crate::ident_pool::{kw, Symbol};
@@ -40,13 +41,11 @@ impl LowerIdent {
     }
 }
 
-impl ToString for LowerIdent {
-    fn to_string(&self) -> String {
+impl Display for LowerIdent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LowerIdent::Number { number, .. } => {
-                format!("{}", number)
-            }
-            LowerIdent::Name(symbol) => symbol.to_string(),
+            LowerIdent::Number { symbol, number } => write!(f, "{}_{}", symbol, number),
+            LowerIdent::Name(symbol) => write!(f, "{}", symbol),
         }
     }
 }

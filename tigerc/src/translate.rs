@@ -155,9 +155,15 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         self.fragments
     }
 
-    pub fn translate(&mut self, ty_ast: &type_ast::TypeAst) -> ir::Exp {
+    pub fn translate(&mut self, ty_ast: &type_ast::TypeAst) {
         let level = Level::<F>::outermost();
-        self.translate_expr(&level, &ty_ast.0)
+        let main = self.translate_expr(&level, &ty_ast.0);
+        let main = ir::Statement::Exp(main);
+        self.fragments.push(Fragment::<F>::Function {
+            label: Label::new_named(ident_pool::symbol("main")),
+            frame: level.current.clone(),
+            body: main,
+        });
     }
 
     fn translate_decl(&mut self, level: &Level<F>, decl: &type_ast::TypeDecl) -> Option<Statement> {

@@ -208,6 +208,10 @@ impl Block {
             _ => true,
         });
     }
+
+    pub fn result(self) -> Vec<ir::Statement> {
+        self.0
+    }
 }
 
 fn basic_block(stmts: Vec<ir::Statement>) -> (Vec<Block>, Label) {

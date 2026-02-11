@@ -48,6 +48,20 @@ impl Instruction {
     }
 }
 
+pub struct InstructionList {
+    pub instructions: Vec<Instruction>,
+    pub done_label: Label,
+}
+
+impl InstructionList {
+    pub fn new(instructions: Vec<Instruction>, done_label: Label) -> InstructionList {
+        InstructionList {
+            instructions,
+            done_label,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{ident_pool, temp::Temp};
