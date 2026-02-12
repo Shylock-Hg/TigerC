@@ -183,7 +183,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         let params = f
             .args
             .iter()
-            .map(|(name, v)| (ir::LowerIdent::new(*name), Variable(v.escape)))
+            .map(|(name, v)| (ir::LowerIdent::new_named(*name), Variable(v.escape)))
             .collect::<IndexMap<_, _>>();
         let new_level = Level::new(level, Label::new_named(f.name), params);
         for i in 0..f.args.len() {

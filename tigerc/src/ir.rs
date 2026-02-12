@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::hash::Hash;
 
-use crate::ident_pool::{kw, Symbol};
+use crate::ident_pool::{self, kw, Symbol};
 use crate::temp::{Label, Temp};
 
 // escape?
@@ -9,32 +9,20 @@ pub struct Variable(pub bool);
 
 // Identify different symbol with same name
 // We will flatten symbol scope when translate it to IR which close to machine code
-#[derive(Eq, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LowerIdent {
-    Number {
-        // this is used just for debug
-        // TODO remove this symbol field
-        symbol: Symbol,
-        number: usize,
-    },
+    Number(usize),
     Name(Symbol),
 }
 
 impl LowerIdent {
-    pub fn new(symbol: Symbol) -> LowerIdent {
+    pub fn new_anonymous() -> LowerIdent {
         // It's safe in single thread
         static mut COUNTER: usize = 0;
-        LowerIdent::Number {
-            symbol,
-            number: unsafe {
-                COUNTER += 1;
-                COUNTER
-            },
-        }
-    }
-
-    pub fn new_anonymous() -> LowerIdent {
-        LowerIdent::new(kw::REVERSED_ANONYMOUS)
+        LowerIdent::Number(unsafe {
+            COUNTER += 1;
+            COUNTER
+        })
     }
 
     pub fn new_named(name: Symbol) -> LowerIdent {
@@ -45,40 +33,8 @@ impl LowerIdent {
 impl Display for LowerIdent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LowerIdent::Number { symbol, number } => write!(f, "{}_{}", symbol, number),
+            LowerIdent::Number(number) => write!(f, "{}_{}", "__anon", number),
             LowerIdent::Name(symbol) => write!(f, "{}", symbol),
-        }
-    }
-}
-
-impl PartialEq for LowerIdent {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (
-                LowerIdent::Number {
-                    symbol: _s1,
-                    number: n1,
-                },
-                LowerIdent::Number {
-                    symbol: _s2,
-                    number: n2,
-                },
-            ) => n1 == n2,
-            (LowerIdent::Name(s1), LowerIdent::Name(s2)) => s1 == s2,
-            _ => false,
-        }
-    }
-}
-
-impl Hash for LowerIdent {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        match self {
-            LowerIdent::Number { number, .. } => {
-                number.hash(state);
-            }
-            LowerIdent::Name(symbol) => {
-                symbol.hash(state);
-            }
         }
     }
 }
