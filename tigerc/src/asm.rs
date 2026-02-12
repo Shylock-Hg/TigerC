@@ -78,4 +78,16 @@ mod tests {
         let result = inst.instance();
         assert_eq!(result, "mov rax rsp");
     }
+
+    #[test]
+    fn test_empty() {
+        let inst = Instruction::Operation {
+            assembly: "".to_string(),
+            destination: vec![Temp::new_named(ident_pool::symbol("rax"))],
+            source: vec![Temp::new_named(ident_pool::symbol("rsp"))],
+            jump: None,
+        };
+        let result = inst.instance();
+        assert_eq!(result, "");
+    }
 }

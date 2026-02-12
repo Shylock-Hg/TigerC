@@ -2,7 +2,7 @@ use std::io::Write;
 
 use translate::Fragment;
 
-use crate::amd64::FrameAmd64;
+use crate::frame::Frame;
 
 pub mod amd64;
 pub mod asm;
@@ -72,8 +72,8 @@ pub fn compile_file(f: &str, output_asm: &str) {
         canon::Fragment::Function { label, frame, body } => {
             let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new();
             gen.munch_trace(body.0);
-            // TODO proc_entry_exit2
-            Some(asm::InstructionList::new(gen.result(), body.1));
+            let insts = frame.borrow().proc_entry_exit2(gen.result());
+            Some(asm::InstructionList::new(insts, body.1));
         }
         canon::Fragment::StringLiteral(..) => (),
     });

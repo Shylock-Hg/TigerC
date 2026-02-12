@@ -1,5 +1,6 @@
 use indexmap::IndexMap;
 
+use crate::asm;
 use crate::ident_pool::Symbol;
 use crate::ir;
 use crate::temp::{Label, Temp};
@@ -25,6 +26,7 @@ pub trait Frame {
     fn new(name: Label, parameters: IndexMap<ir::LowerIdent, ir::Variable>) -> Self;
 
     fn fp() -> Temp;
+    fn sp() -> Temp;
     fn return_value() -> Temp;
     fn word_size() -> i64;
 
@@ -33,4 +35,5 @@ pub trait Frame {
     fn allocate_local(&mut self, var: ir::Variable) -> Variable;
 
     fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement;
+    fn proc_entry_exit2(&self, insts: Vec<asm::Instruction>) -> Vec<asm::Instruction>;
 }

@@ -13,6 +13,7 @@ pub struct Variable(pub bool);
 pub enum LowerIdent {
     Number {
         // this is used just for debug
+        // TODO remove this symbol field
         symbol: Symbol,
         number: usize,
     },

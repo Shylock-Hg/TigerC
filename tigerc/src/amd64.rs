@@ -3,8 +3,8 @@ use std::sync::Once;
 use indexmap::IndexMap;
 
 use crate::frame::{Access, Frame, Variable};
-use crate::ir;
 use crate::temp::{Label, Temp};
+use crate::{asm, ir};
 use crate::{ident_pool, ir_gen};
 
 // registers
@@ -232,6 +232,10 @@ impl Frame for FrameAmd64 {
         Self::rbp()
     }
 
+    fn sp() -> Temp {
+        Self::rsp()
+    }
+
     fn return_value() -> Temp {
         Self::rax()
     }
@@ -308,5 +312,20 @@ impl Frame for FrameAmd64 {
             s1: Box::new(statement),
             s2: Box::new(end_statement),
         }
+    }
+
+    fn proc_entry_exit2(&self, mut insts: Vec<asm::Instruction>) -> Vec<asm::Instruction> {
+        // keep these registers until here
+        let mut save = vec![Self::sp(), Self::return_value()];
+        save.extend(Self::callee_saved_registers());
+        let inst = asm::Instruction::Operation {
+            assembly: "".to_string(),
+            destination: vec![],
+            source: save,
+            jump: None,
+        };
+
+        insts.push(inst);
+        insts
     }
 }
