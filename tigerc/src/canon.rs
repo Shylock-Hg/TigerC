@@ -209,8 +209,8 @@ impl Block {
         });
     }
 
-    pub fn result(&self) -> &Vec<ir::Statement> {
-        &self.0
+    pub fn result(self) -> Vec<ir::Statement> {
+        self.0
     }
 
     pub fn start_label(&self) -> Label {

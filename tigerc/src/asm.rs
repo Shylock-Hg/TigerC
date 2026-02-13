@@ -52,6 +52,23 @@ pub struct Block {
     pub instructions: Vec<Instruction>,
 }
 
+impl Block {
+    pub fn new(instructions: Vec<Instruction>) -> Block {
+        Block { instructions }
+    }
+
+    pub fn last(&self) -> &Instruction {
+        self.instructions.last().unwrap()
+    }
+
+    pub fn start_label(&self) -> Label {
+        match self.instructions.first().unwrap() {
+            Instruction::Label { label, .. } => *label,
+            _ => panic!("block should start with a label"),
+        }
+    }
+}
+
 pub struct Trace {
     pub blocks: Vec<Block>,
     pub done_label: Label,

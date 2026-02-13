@@ -70,10 +70,10 @@ pub fn compile_file(f: &str, output_asm: &str) {
     });
 
     writeln!(output_asm, "section .text").unwrap();
-    fragments.iter().for_each(|f| match f {
+    fragments.into_iter().for_each(|f| match f {
         canon::Fragment::Function { label, frame, body } => {
-            let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(&body.1);
-            gen.munch_trace(&body.0);
+            let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(body.1);
+            gen.munch_trace(body.0);
             let mut trace = gen.result();
             let insts = frame
                 .borrow()
@@ -81,7 +81,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             trace.add_block(asm::Block {
                 instructions: insts,
             });
-            let flow = flow::flow_analyze(&(body.0), &(body.1));
+            let flow = flow::flow_analyze(&trace);
         }
         canon::Fragment::StringLiteral(..) => (),
     });

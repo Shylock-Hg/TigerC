@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    canon::{Block, Trace},
+    asm::{Block, Instruction, Trace},
     graph::{Entry, Graph, Node},
     ir,
     temp::Label,
@@ -27,7 +27,7 @@ impl<'a> FlowGraph<'a> {
     }
 }
 
-pub fn flow_analyze<'a>(trace: &'a Trace, done_label: &Label) -> FlowGraph<'a> {
+pub fn flow_analyze<'a>(trace: &'a Trace) -> FlowGraph<'a> {
     let mut flow_graph = FlowGraph::new();
     let index = trace
         .blocks
@@ -40,20 +40,14 @@ pub fn flow_analyze<'a>(trace: &'a Trace, done_label: &Label) -> FlowGraph<'a> {
         let mut outcome = Vec::new();
         let last = block.last();
         match last {
-            &ir::Statement::Jump { ref labels, .. } => {
-                for target in labels {
-                    outcome.push(Entry(*index.get(dbg!(target)).unwrap()));
+            &Instruction::Operation { ref jump, .. } => {
+                if let Some(labels) = jump {
+                    for target in labels {
+                        outcome.push(Entry(*index.get(target).unwrap()));
+                    }
                 }
             }
-            &ir::Statement::CJump {
-                ref then,
-                ref else_,
-                ..
-            } => {
-                outcome.push(Entry(*index.get(then).unwrap()));
-                outcome.push(Entry(*index.get(else_).unwrap()));
-            }
-            &ir::Statement::Label(l) => assert!(l == *done_label),
+            &Instruction::Label { label, .. } => assert!(label == trace.done_label),
             _ => unreachable!(),
         }
 
@@ -63,29 +57,17 @@ pub fn flow_analyze<'a>(trace: &'a Trace, done_label: &Label) -> FlowGraph<'a> {
     for block in &trace.blocks {
         let last = block.last();
         match last {
-            &ir::Statement::Jump { ref labels, .. } => {
-                for target in labels {
-                    flow_graph.add_income(
-                        &Entry(*index.get(target).unwrap()),
-                        Entry(*index.get(&block.start_label()).unwrap()),
-                    );
+            &Instruction::Operation { ref jump, .. } => {
+                if let Some(labels) = jump {
+                    for target in labels {
+                        flow_graph.add_income(
+                            &Entry(*index.get(&target).unwrap()),
+                            Entry(*index.get(&block.start_label()).unwrap()),
+                        );
+                    }
                 }
             }
-            &ir::Statement::CJump {
-                ref then,
-                ref else_,
-                ..
-            } => {
-                flow_graph.add_income(
-                    &Entry(*index.get(then).unwrap()),
-                    Entry(*index.get(&block.start_label()).unwrap()),
-                );
-                flow_graph.add_income(
-                    &Entry(*index.get(else_).unwrap()),
-                    Entry(*index.get(&block.start_label()).unwrap()),
-                );
-            }
-            &ir::Statement::Label(l) => assert!(l == *done_label),
+            &Instruction::Label { label, .. } => assert!(label == trace.done_label),
             _ => unreachable!(),
         }
     }
