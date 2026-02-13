@@ -4,38 +4,43 @@ use crate::asm;
 use crate::canon;
 use crate::frame::Frame;
 use crate::ir;
-use crate::temp::Temp;
+use crate::temp::{Label, Temp};
 
 pub struct Gen<F: Frame> {
     insts: Vec<asm::Instruction>,
+    trace: asm::Trace,
     _frame: std::marker::PhantomData<F>,
 }
 
 impl<F: Frame> Gen<F> {
-    pub fn new() -> Self {
+    pub fn new(done_label: &Label) -> Self {
         Gen {
             insts: Vec::new(),
+            trace: asm::Trace::new(done_label.clone()),
             _frame: std::marker::PhantomData,
         }
     }
 
-    pub fn result(self) -> Vec<asm::Instruction> {
-        self.insts
+    pub fn result(self) -> asm::Trace {
+        self.trace
     }
 
-    pub fn munch_trace(&mut self, trace: canon::Trace) {
-        for block in trace.blocks {
+    pub fn munch_trace(&mut self, trace: &canon::Trace) {
+        for block in &trace.blocks {
             self.munch_block(block);
+            self.trace.add_block(asm::Block {
+                instructions: self.insts.drain(..).collect(),
+            });
         }
     }
 
-    pub fn munch_block(&mut self, block: canon::Block) {
-        for stmt in block.result() {
+    pub fn munch_block(&mut self, block: &canon::Block) {
+        for stmt in block.result().iter() {
             self.munch_statement(stmt);
         }
     }
 
-    pub fn munch_statement(&mut self, s: ir::Statement) {
+    pub fn munch_statement(&mut self, s: &ir::Statement) {
         match s {
             ir::Statement::Move { dst, val } => {
                 let dst = self.munch_expression(dst);
@@ -57,7 +62,7 @@ impl<F: Frame> Gen<F> {
                     assembly: "jmp `s0".to_string(),
                     destination: vec![],
                     source: vec![exp],
-                    jump: Some(labels),
+                    jump: Some(labels.clone()),
                 };
                 self.emit(inst);
             }
@@ -92,7 +97,7 @@ impl<F: Frame> Gen<F> {
                     assembly: std::format!("{} {}", opcode, then),
                     destination: vec![],
                     source: vec![],
-                    jump: Some(vec![then, else_]),
+                    jump: Some(vec![then.clone(), else_.clone()]),
                 };
                 self.emit(inst);
             }
@@ -100,14 +105,14 @@ impl<F: Frame> Gen<F> {
             ir::Statement::Label(l) => {
                 let inst = asm::Instruction::Label {
                     assembly: std::format!("{}:", l),
-                    label: l,
+                    label: l.clone(),
                 };
                 self.emit(inst);
             }
         }
     }
 
-    fn munch_expression(&mut self, e: ir::Exp) -> Temp {
+    fn munch_expression(&mut self, e: &ir::Exp) -> Temp {
         let temp = Temp::new();
         match e {
             ir::Exp::Const(i) => {
@@ -120,7 +125,7 @@ impl<F: Frame> Gen<F> {
                 self.emit(inst);
             }
             ir::Exp::Temp(t) => {
-                return t;
+                return t.clone();
             }
             ir::Exp::Name(l) => {
                 // mov temp, l
@@ -132,7 +137,7 @@ impl<F: Frame> Gen<F> {
                 self.emit(inst);
             }
             ir::Exp::Mem(addr) => {
-                let addr_temp = self.munch_expression(*addr);
+                let addr_temp = self.munch_expression(addr);
                 // mov temp, addr_temp
                 let inst = asm::Instruction::Move {
                     assembly: "mov `d0, `s0".to_string(),
@@ -145,7 +150,7 @@ impl<F: Frame> Gen<F> {
                 unreachable!();
             }
             ir::Exp::Call { func, args } => {
-                let function_temp = self.munch_expression(*func);
+                let function_temp = self.munch_expression(func);
                 let argument_temps = args
                     .into_iter()
                     .map(|arg| self.munch_expression(arg))
@@ -173,8 +178,8 @@ impl<F: Frame> Gen<F> {
                 self.emit(inst);
             }
             ir::Exp::BinOp { op, left, right } => {
-                let left_temp = self.munch_expression(*left);
-                let right_temp = self.munch_expression(*right);
+                let left_temp = self.munch_expression(left);
+                let right_temp = self.munch_expression(right);
 
                 // mov temp left_temp
                 let inst = asm::Instruction::Move {

@@ -177,7 +177,7 @@ fn commute(stmt: &ir::Statement, exp: &ir::Exp) -> bool {
 }
 
 // The first statement is a LABEL.
-// The last statement is a JUMP or CJUMP.
+// The last statement is a JUMP or CJUMP.? the done_label block is not ended with jump/cjump
 // There are no other LABELs, JUMPs, or CJUMPs.
 #[derive(Clone, Debug)]
 pub struct Block(Vec<ir::Statement>);
@@ -191,14 +191,14 @@ impl Block {
         self.0.push(stmt);
     }
 
-    pub fn finish(mut self, stmt: ir::Statement) -> Self {
-        debug_assert!(matches!(
-            stmt,
-            ir::Statement::Jump { .. } | ir::Statement::CJump { .. }
-        ));
-        self.0.push(stmt);
-        self
-    }
+    //pub fn finish(mut self, stmt: ir::Statement) -> Self {
+    //debug_assert!(matches!(
+    //stmt,
+    //ir::Statement::Jump { .. } | ir::Statement::CJump { .. }
+    //));
+    //self.0.push(stmt);
+    //self
+    //}
 
     // filter unused statements
     // a naive implementation, in fact, we can remove all pure expression which result is unused
@@ -209,8 +209,23 @@ impl Block {
         });
     }
 
-    pub fn result(self) -> Vec<ir::Statement> {
-        self.0
+    pub fn result(&self) -> &Vec<ir::Statement> {
+        &self.0
+    }
+
+    pub fn start_label(&self) -> Label {
+        match self.0.first().unwrap() {
+            ir::Statement::Label(l) => l.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn last(&self) -> &ir::Statement {
+        self.0.last().unwrap()
+    }
+
+    pub fn size(&self) -> usize {
+        self.0.len()
     }
 }
 
@@ -382,6 +397,7 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
         }
         new_blocks.push(current_block);
     }
+    new_blocks.push(Block::new(done_label));
     Trace { blocks: new_blocks }
 }
 

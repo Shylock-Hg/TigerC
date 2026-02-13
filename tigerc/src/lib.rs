@@ -12,7 +12,9 @@ pub mod canon;
 pub mod cursor;
 pub mod data_layout;
 pub mod escape;
+pub mod flow;
 pub mod frame;
+pub mod graph;
 pub mod ident_pool;
 pub mod ir;
 pub mod ir_gen;
@@ -40,9 +42,9 @@ pub fn compile_file(f: &str, output_asm: &str) {
         .into_iter()
         .map(|f| match f {
             Fragment::Function { label, frame, body } => {
-                println!("origin statement: {:#?}", body);
+                // println!("origin statement: {:#?}", body);
                 let regular_stmts = canon::canonicalize(body);
-                println!("{:?}: {:?}", label, regular_stmts.0.blocks);
+                // println!("{:?}: {:?}", label, regular_stmts.0.blocks);
                 canon::Fragment::Function {
                     label,
                     frame,
@@ -68,12 +70,18 @@ pub fn compile_file(f: &str, output_asm: &str) {
     });
 
     writeln!(output_asm, "section .text").unwrap();
-    fragments.into_iter().for_each(|f| match f {
+    fragments.iter().for_each(|f| match f {
         canon::Fragment::Function { label, frame, body } => {
-            let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new();
-            gen.munch_trace(body.0);
-            let insts = frame.borrow().proc_entry_exit2(gen.result());
-            Some(asm::InstructionList::new(insts, body.1));
+            let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(&body.1);
+            gen.munch_trace(&body.0);
+            let mut trace = gen.result();
+            let insts = frame
+                .borrow()
+                .proc_entry_exit2(trace.mv_last().instructions);
+            trace.add_block(asm::Block {
+                instructions: insts,
+            });
+            let flow = flow::flow_analyze(&(body.0), &(body.1));
         }
         canon::Fragment::StringLiteral(..) => (),
     });

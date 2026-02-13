@@ -48,17 +48,33 @@ impl Instruction {
     }
 }
 
-pub struct InstructionList {
+pub struct Block {
     pub instructions: Vec<Instruction>,
+}
+
+pub struct Trace {
+    pub blocks: Vec<Block>,
     pub done_label: Label,
 }
 
-impl InstructionList {
-    pub fn new(instructions: Vec<Instruction>, done_label: Label) -> InstructionList {
-        InstructionList {
-            instructions,
+impl Trace {
+    pub fn new(done_label: Label) -> Trace {
+        Trace {
+            blocks: vec![],
             done_label,
         }
+    }
+
+    pub fn add_block(&mut self, block: Block) {
+        self.blocks.push(block);
+    }
+
+    pub fn mut_last(&mut self) -> &mut Block {
+        self.blocks.last_mut().unwrap()
+    }
+
+    pub fn mv_last(&mut self) -> Block {
+        self.blocks.pop().unwrap()
     }
 }
 
