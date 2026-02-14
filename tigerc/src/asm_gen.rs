@@ -43,12 +43,35 @@ impl<F: Frame> Gen<F> {
     pub fn munch_statement(&mut self, s: ir::Statement) {
         match s {
             ir::Statement::Move { dst, val } => {
-                let dst = self.munch_expression(dst);
-                let val = self.munch_expression(val);
-                let inst = asm::Instruction::Move {
-                    assembly: "mov `d0, `s0".to_string(),
-                    destination: vec![dst],
-                    source: vec![val],
+                let inst = match (dst, val) {
+                    (ir::Exp::Mem(..), ir::Exp::Mem(..)) => unreachable!(),
+                    (ir::Exp::Mem(dst), val) => {
+                        let val_temp = self.munch_expression(val);
+                        let dst_temp = self.munch_expression(*dst);
+                        asm::Instruction::Move {
+                            assembly: "mov [`d0], `s0".to_string(),
+                            destination: vec![dst_temp],
+                            source: vec![val_temp],
+                        }
+                    }
+                    (dst, ir::Exp::Mem(val)) => {
+                        let val_temp = self.munch_expression(*val);
+                        let dst_temp = self.munch_expression(dst);
+                        asm::Instruction::Move {
+                            assembly: "mov `d0, [`s0]".to_string(),
+                            destination: vec![dst_temp],
+                            source: vec![val_temp],
+                        }
+                    }
+                    (dst, val) => {
+                        let val_temp = self.munch_expression(val);
+                        let dst_temp = self.munch_expression(dst);
+                        asm::Instruction::Move {
+                            assembly: "mov `d0, `s0".to_string(),
+                            destination: vec![dst_temp],
+                            source: vec![val_temp],
+                        }
+                    }
                 };
                 self.emit(inst);
             }
