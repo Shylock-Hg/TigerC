@@ -90,8 +90,12 @@ impl Trace {
         self.blocks.last_mut().unwrap()
     }
 
-    pub fn mv_last(&mut self) -> Block {
-        self.blocks.pop().unwrap()
+    pub fn transform_last<F>(&mut self, f: F)
+    where
+        F: FnOnce(Block) -> Block,
+    {
+        let val = self.blocks.pop().unwrap();
+        self.blocks.push(f(val))
     }
 }
 

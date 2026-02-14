@@ -75,11 +75,8 @@ pub fn compile_file(f: &str, output_asm: &str) {
             let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(body.1);
             gen.munch_trace(body.0);
             let mut trace = gen.result();
-            let insts = frame
-                .borrow()
-                .proc_entry_exit2(trace.mv_last().instructions);
-            trace.add_block(asm::Block {
-                instructions: insts,
+            trace.transform_last(|v| asm::Block {
+                instructions: frame.borrow().proc_entry_exit2(v.instructions),
             });
             let flow = flow::flow_analyze(&trace);
         }
