@@ -3,8 +3,10 @@ use std::collections::HashMap;
 use crate::{
     asm::{Block, Instruction, Trace},
     graph::{Entry, Graph, Node},
+    temp::Temp,
 };
 
+#[derive(Debug)]
 pub struct FlowGraph<'a> {
     graph: Graph<&'a Block>,
 }
@@ -22,6 +24,32 @@ impl<'a> FlowGraph<'a> {
 
     pub fn add_income(&mut self, block: &Entry, income: Entry) {
         self.graph.mut_node(block).add_income(income);
+    }
+
+    pub fn done_node(&self) -> &Node<&'a Block> {
+        self.graph.last_node()
+    }
+
+    pub fn def(&self, block: &Entry, offset: usize) -> Vec<Temp> {
+        let block = self.graph.node(&block);
+        let inst = block.value().instructions.get(offset).unwrap();
+        inst.def()
+    }
+
+    pub fn use_(&self, block: &Entry, offset: usize) -> Vec<Temp> {
+        let block = self.graph.node(&block);
+        let inst = block.value().instructions.get(offset).unwrap();
+        inst.use_()
+    }
+
+    pub fn is_move(&self, block: &Entry, offset: usize) -> bool {
+        let block = self.graph.node(&block);
+        let inst = block.value().instructions.get(offset).unwrap();
+        inst.is_move()
+    }
+
+    pub fn get(&self, block: &Entry) -> &Node<&'a Block> {
+        self.graph.node(&block)
     }
 }
 

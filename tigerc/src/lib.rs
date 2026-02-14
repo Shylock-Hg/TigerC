@@ -18,6 +18,7 @@ pub mod graph;
 pub mod ident_pool;
 pub mod ir;
 pub mod ir_gen;
+pub mod liveness;
 pub mod parser;
 pub mod stack;
 pub mod symbol_table;
@@ -79,6 +80,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
                 instructions: frame.borrow().proc_entry_exit2(v.instructions),
             });
             let flow = flow::flow_analyze(&trace);
+            let inter_g = liveness::liveness_analyze(&flow, trace.done_label);
         }
         canon::Fragment::StringLiteral(..) => (),
     });

@@ -46,8 +46,29 @@ impl Instruction {
             }
         }
     }
+
+    pub fn def(&self) -> Vec<Temp> {
+        match &self {
+            Instruction::Operation { destination, .. } => destination.clone(),
+            Instruction::Label { .. } => vec![],
+            Instruction::Move { destination, .. } => destination.clone(),
+        }
+    }
+
+    pub fn use_(&self) -> Vec<Temp> {
+        match &self {
+            Instruction::Operation { source, .. } => source.clone(),
+            Instruction::Label { .. } => vec![],
+            Instruction::Move { source, .. } => source.clone(),
+        }
+    }
+
+    pub fn is_move(&self) -> bool {
+        matches!(&self, Instruction::Move { .. })
+    }
 }
 
+#[derive(Debug)]
 pub struct Block {
     pub instructions: Vec<Instruction>,
 }
