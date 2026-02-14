@@ -613,7 +613,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     fn translate_record_ctor(&mut self, level: &Level<F>, r: &type_ast::RecordExpr) -> ir::Exp {
         let size = Self::size_of_record(r);
         let p = Self::malloc(ir::Exp::Const(size));
-        let init_exp = r.init.iter().enumerate().map(|(i, (f, v))| {
+        let init_exp = r.init.iter().enumerate().map(|(i, (_, v))| {
             let v = self.translate_expr(level, v);
             let offset = F::word_size() * i as i64;
             (offset, v)

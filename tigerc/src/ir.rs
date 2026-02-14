@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::hash::Hash;
 
-use crate::ident_pool::{self, kw, Symbol};
+use crate::ident_pool::Symbol;
 use crate::temp::{Label, Temp};
 
 // escape?

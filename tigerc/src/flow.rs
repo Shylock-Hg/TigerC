@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use crate::{
     asm::{Block, Instruction, Trace},
     graph::{Entry, Graph, Node},
-    ir,
-    temp::Label,
 };
 
 pub struct FlowGraph<'a> {
