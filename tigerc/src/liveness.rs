@@ -118,9 +118,10 @@ fn build_iterference_graph<'a>(
         for def in inst.def() {
             for b in live_map.get(&ProgramPoint { block, offset }).unwrap() {
                 // an optimization for move
-                if !(inst.is_move() && use_.contains(b)) {
+                if !(inst.is_move() && use_.contains(b)) && def != *b {
                     iter_g.add_interference(def, *b);
-                } else {
+                }
+                if inst.is_move() {
                     iter_g.add_move(Move { dst: def, src: *b });
                 }
             }
