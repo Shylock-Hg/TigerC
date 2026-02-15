@@ -90,7 +90,8 @@ pub fn liveness_analyze(flow: &FlowGraph, done_label: Label) -> InterferenceGrap
     assert!(done_node.value().start_label() == done_label);
     assert!(done_node.outcome().is_empty());
     let mut visited = HashSet::<Entry>::new();
-    build_live_map(flow, done_node, &mut live_map, &mut visited);
+    let mut current = HashSet::<Temp>::new();
+    build_live_map(flow, done_node, &mut live_map, &mut visited, &mut current);
     let live_map = live_map; // avoid modify
     let mut iter_g = InterferenceGraph {
         g: Graph::<Temp>::new(),
@@ -140,18 +141,22 @@ fn build_live_map<'a>(
     node: &Node<&'a asm::Block>,
     live_map: &mut HashMap<ProgramPoint<'a>, HashSet<Temp>>,
     visited: &mut HashSet<Entry>,
+    current: &mut HashSet<Temp>,
 ) {
     // reverse iterate flow
     let block = node.value();
     for (i, inst) in block.instructions.iter().enumerate().rev() {
+        let def = inst.def();
+        def.iter().for_each(|v| {
+            current.remove(v);
+        });
+        current.extend(inst.use_());
         live_map
             .entry(ProgramPoint { block, offset: i })
             .and_modify(|v| {
-                let def = inst.def();
-                v.retain(|v| !def.contains(v));
-                v.extend(inst.use_());
+                v.extend(current.clone());
             })
-            .or_insert(inst.use_().into_iter().collect());
+            .or_insert(current.clone());
     }
     for income in node.income() {
         if visited.contains(income) {
@@ -160,6 +165,6 @@ fn build_live_map<'a>(
         }
         visited.insert(*income);
         let node = flow.get(income);
-        build_live_map(flow, node, live_map, visited);
+        build_live_map(flow, node, live_map, visited, current);
     }
 }
