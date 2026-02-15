@@ -8,6 +8,7 @@ use crate::{
     asm,
     flow::FlowGraph,
     graph::{Entry, Graph, Node},
+    symbol_table::SymbolTable,
     temp::{Label, Temp},
 };
 
@@ -89,7 +90,7 @@ pub fn liveness_analyze(flow: &FlowGraph, done_label: Label) -> InterferenceGrap
     let done_node = flow.done_node();
     assert!(done_node.value().start_label() == done_label);
     assert!(done_node.outcome().is_empty());
-    let mut visited = HashSet::<Entry>::new();
+    let mut visited = SymbolTable::<(), Entry>::new();
     let mut current = HashSet::<Temp>::new();
     build_live_map(flow, done_node, &mut live_map, &mut visited, &mut current);
     let live_map = live_map; // avoid modify
@@ -140,7 +141,7 @@ fn build_live_map<'a>(
     flow: &'a FlowGraph,
     node: &Node<&'a asm::Block>,
     live_map: &mut HashMap<ProgramPoint<'a>, HashSet<Temp>>,
-    visited: &mut HashSet<Entry>,
+    visited: &mut SymbolTable<(), Entry>,
     current: &mut HashSet<Temp>,
 ) {
     // reverse iterate flow
@@ -159,12 +160,15 @@ fn build_live_map<'a>(
             .or_insert(current.clone());
     }
     for income in node.income() {
-        if visited.contains(income) {
+        if visited.get_symbol(income).is_some() {
             // the done block will never be re-visited, so we don't need to check it
             continue;
         }
-        visited.insert(*income);
+        visited.begin_scope();
+        visited.insert_symbol(*income, ());
         let node = flow.get(income);
-        build_live_map(flow, node, live_map, visited, current);
+        let mut derived = current.clone(); // TODO merge this into visited to avoid clone?
+        build_live_map(flow, node, live_map, visited, &mut derived);
+        visited.end_scope();
     }
 }

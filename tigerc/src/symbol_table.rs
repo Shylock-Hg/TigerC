@@ -1,21 +1,24 @@
 use std::collections::LinkedList;
-use std::hash::RandomState;
+use std::hash::{Hash, RandomState};
 
 use crate::ident_pool::Symbol;
 use crate::stack::Stack;
 
-struct MultiMap<V, S = RandomState> {
-    inner: std::collections::HashMap<Symbol, LinkedList<V>, S>,
+struct MultiMap<V, K = Symbol, S = RandomState> {
+    inner: std::collections::HashMap<K, LinkedList<V>, S>,
 }
 
-impl<V> MultiMap<V> {
-    pub fn new() -> MultiMap<V> {
+impl<V, K> MultiMap<V, K> {
+    pub fn new() -> MultiMap<V, K> {
         MultiMap {
             inner: std::collections::HashMap::new(),
         }
     }
 
-    pub fn get(&self, key: &Symbol) -> Option<&V> {
+    pub fn get(&self, key: &K) -> Option<&V>
+    where
+        K: Eq + Hash,
+    {
         if let Some(list) = self.inner.get(key) {
             list.back()
         } else {
@@ -23,42 +26,54 @@ impl<V> MultiMap<V> {
         }
     }
 
-    pub fn insert(&mut self, key: Symbol, value: V) {
+    pub fn insert(&mut self, key: K, value: V)
+    where
+        K: Eq + Hash,
+    {
         self.inner
             .entry(key)
             .or_insert(Default::default())
             .push_back(value);
     }
 
-    pub fn remove(&mut self, key: &Symbol) {
+    pub fn remove(&mut self, key: &K)
+    where
+        K: Eq + Hash,
+    {
         self.inner.get_mut(key).unwrap().pop_back();
     }
 }
 
-enum StackRef {
-    Symbol(Symbol),
+enum StackRef<K = Symbol> {
+    Symbol(K),
     ScopeDelimiter,
 }
 
-pub struct SymbolTable<T> {
-    map: MultiMap<T>,
-    stack: Stack<StackRef>,
+pub struct SymbolTable<T, K = Symbol> {
+    map: MultiMap<T, K>,
+    stack: Stack<StackRef<K>>,
 }
 
-impl<T> SymbolTable<T> {
-    pub fn new() -> SymbolTable<T> {
+impl<T, K> SymbolTable<T, K> {
+    pub fn new() -> SymbolTable<T, K> {
         SymbolTable {
-            map: MultiMap::<T>::new(),
-            stack: Stack::new(),
+            map: MultiMap::<T, K>::new(),
+            stack: Stack::<StackRef<K>>::new(),
         }
     }
 
-    pub fn get_symbol(&self, symbol: &Symbol) -> Option<&T> {
+    pub fn get_symbol(&self, symbol: &K) -> Option<&T>
+    where
+        K: Eq + Hash,
+    {
         self.map.get(symbol)
     }
 
-    pub fn insert_symbol(&mut self, symbol: Symbol, value: T) {
-        self.map.insert(symbol, value);
+    pub fn insert_symbol(&mut self, symbol: K, value: T)
+    where
+        K: Eq + Hash + Clone,
+    {
+        self.map.insert(symbol.clone(), value);
         self.stack.push(StackRef::Symbol(symbol));
     }
 
@@ -66,7 +81,10 @@ impl<T> SymbolTable<T> {
         self.stack.push(StackRef::ScopeDelimiter);
     }
 
-    pub fn end_scope(&mut self) {
+    pub fn end_scope(&mut self)
+    where
+        K: Eq + Hash,
+    {
         while let Some(symbol) = self.stack.pop() {
             match symbol {
                 StackRef::Symbol(symbol) => {
