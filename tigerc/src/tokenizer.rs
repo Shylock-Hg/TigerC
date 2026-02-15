@@ -84,6 +84,43 @@ pub enum Token {
     Eof,
 }
 
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Comment => write!(f, "Comment"),
+            Token::Ident(s) => write!(f, "Ident({})", s),
+            Token::Number(n) => write!(f, "Number({})", n),
+            Token::Str(s) => write!(f, "Str({})", s),
+            Token::Slash => write!(f, "Slash"),
+            Token::OpenBrace => write!(f, "OpenBrace"),
+            Token::CloseBrace => write!(f, "CloseBrace"),
+            Token::OpenParen => write!(f, "OpenParen"),
+            Token::CloseParen => write!(f, "CloseParen"),
+            Token::OpenBracket => write!(f, "OpenBracket"),
+            Token::CloseBracket => write!(f, "CloseBracket"),
+            Token::Assign => write!(f, "Assign"),
+            Token::Comma => write!(f, "Comma"),
+            Token::SemiColon => write!(f, "SemiColon"),
+            Token::And => write!(f, "And"),
+            Token::Or => write!(f, "Or"),
+            Token::Colon => write!(f, "Colon"),
+            Token::Plus => write!(f, "Plus"),
+            Token::Minus => write!(f, "Minus"),
+            Token::Star => write!(f, "Star"),
+            Token::Eq => write!(f, "Eq"),
+            Token::Ne => write!(f, "Ne"),
+            Token::Gt => write!(f, "Gt"),
+            Token::Ge => write!(f, "Ge"),
+            Token::Lt => write!(f, "Lt"),
+            Token::Le => write!(f, "Le"),
+            Token::Dot => write!(f, "Dot"),
+            Token::Dummy => write!(f, "Dummy"),
+            Token::Error(e) => write!(f, "Error({:?})", e),
+            Token::Eof => write!(f, "Eof"),
+        }
+    }
+}
+
 pub fn tokenize<'a>(content: &'a str) -> impl Iterator<Item = Posed<Token>> + 'a {
     let mut cursor = cursor::Cursor::new(content);
     std::iter::from_fn(move || {

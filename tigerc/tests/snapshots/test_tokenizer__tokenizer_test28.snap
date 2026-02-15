@@ -1,0 +1,47 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test28.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 3, column: 1 } }
+Posed { node: Ident(type), pos: Pos { line: 4, column: 5 } }
+Posed { node: Ident(rectype1), pos: Pos { line: 4, column: 10 } }
+Posed { node: Eq, pos: Pos { line: 4, column: 19 } }
+Posed { node: OpenBrace, pos: Pos { line: 4, column: 21 } }
+Posed { node: Ident(name), pos: Pos { line: 4, column: 22 } }
+Posed { node: Colon, pos: Pos { line: 4, column: 26 } }
+Posed { node: Ident(string), pos: Pos { line: 4, column: 27 } }
+Posed { node: Comma, pos: Pos { line: 4, column: 34 } }
+Posed { node: Ident(id), pos: Pos { line: 4, column: 36 } }
+Posed { node: Colon, pos: Pos { line: 4, column: 38 } }
+Posed { node: Ident(int), pos: Pos { line: 4, column: 39 } }
+Posed { node: CloseBrace, pos: Pos { line: 4, column: 42 } }
+Posed { node: Ident(type), pos: Pos { line: 5, column: 5 } }
+Posed { node: Ident(rectype2), pos: Pos { line: 5, column: 10 } }
+Posed { node: Eq, pos: Pos { line: 5, column: 19 } }
+Posed { node: OpenBrace, pos: Pos { line: 5, column: 21 } }
+Posed { node: Ident(name), pos: Pos { line: 5, column: 22 } }
+Posed { node: Colon, pos: Pos { line: 5, column: 26 } }
+Posed { node: Ident(string), pos: Pos { line: 5, column: 27 } }
+Posed { node: Comma, pos: Pos { line: 5, column: 34 } }
+Posed { node: Ident(id), pos: Pos { line: 5, column: 36 } }
+Posed { node: Colon, pos: Pos { line: 5, column: 38 } }
+Posed { node: Ident(int), pos: Pos { line: 5, column: 39 } }
+Posed { node: CloseBrace, pos: Pos { line: 5, column: 42 } }
+Posed { node: Ident(var), pos: Pos { line: 7, column: 5 } }
+Posed { node: Ident(rec1), pos: Pos { line: 7, column: 9 } }
+Posed { node: Colon, pos: Pos { line: 7, column: 13 } }
+Posed { node: Ident(rectype1), pos: Pos { line: 7, column: 15 } }
+Posed { node: Assign, pos: Pos { line: 7, column: 24 } }
+Posed { node: Ident(rectype2), pos: Pos { line: 7, column: 27 } }
+Posed { node: OpenBrace, pos: Pos { line: 7, column: 36 } }
+Posed { node: Ident(name), pos: Pos { line: 7, column: 37 } }
+Posed { node: Eq, pos: Pos { line: 7, column: 41 } }
+Posed { node: Str(Name), pos: Pos { line: 7, column: 42 } }
+Posed { node: Comma, pos: Pos { line: 7, column: 48 } }
+Posed { node: Ident(id), pos: Pos { line: 7, column: 50 } }
+Posed { node: Eq, pos: Pos { line: 7, column: 52 } }
+Posed { node: Number(0), pos: Pos { line: 7, column: 53 } }
+Posed { node: CloseBrace, pos: Pos { line: 7, column: 54 } }
+Posed { node: Ident(in), pos: Pos { line: 8, column: 1 } }
+Posed { node: Ident(rec1), pos: Pos { line: 9, column: 5 } }
+Posed { node: Ident(end), pos: Pos { line: 10, column: 1 } }

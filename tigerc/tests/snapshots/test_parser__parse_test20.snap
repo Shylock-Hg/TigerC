@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test20.tig\")"
+---
+while (10 > 5) do ((i + 1); ())

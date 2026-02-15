@@ -1,0 +1,14 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test10.tig\")"
+---
+Posed { node: Ident(while), pos: Pos { line: 2, column: 1 } }
+Posed { node: OpenParen, pos: Pos { line: 2, column: 6 } }
+Posed { node: Number(10), pos: Pos { line: 2, column: 7 } }
+Posed { node: Gt, pos: Pos { line: 2, column: 10 } }
+Posed { node: Number(5), pos: Pos { line: 2, column: 12 } }
+Posed { node: CloseParen, pos: Pos { line: 2, column: 13 } }
+Posed { node: Ident(do), pos: Pos { line: 2, column: 15 } }
+Posed { node: Number(5), pos: Pos { line: 2, column: 18 } }
+Posed { node: Plus, pos: Pos { line: 2, column: 19 } }
+Posed { node: Number(6), pos: Pos { line: 2, column: 20 } }

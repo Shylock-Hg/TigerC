@@ -1,0 +1,30 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test36.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(function), pos: Pos { line: 3, column: 5 } }
+Posed { node: Ident(g), pos: Pos { line: 3, column: 14 } }
+Posed { node: OpenParen, pos: Pos { line: 3, column: 16 } }
+Posed { node: Ident(a), pos: Pos { line: 3, column: 17 } }
+Posed { node: Colon, pos: Pos { line: 3, column: 18 } }
+Posed { node: Ident(int), pos: Pos { line: 3, column: 19 } }
+Posed { node: Comma, pos: Pos { line: 3, column: 23 } }
+Posed { node: Ident(b), pos: Pos { line: 3, column: 25 } }
+Posed { node: Colon, pos: Pos { line: 3, column: 26 } }
+Posed { node: Ident(string), pos: Pos { line: 3, column: 27 } }
+Posed { node: CloseParen, pos: Pos { line: 3, column: 33 } }
+Posed { node: Colon, pos: Pos { line: 3, column: 34 } }
+Posed { node: Ident(int), pos: Pos { line: 3, column: 35 } }
+Posed { node: Eq, pos: Pos { line: 3, column: 39 } }
+Posed { node: Ident(a), pos: Pos { line: 3, column: 41 } }
+Posed { node: Ident(in), pos: Pos { line: 4, column: 1 } }
+Posed { node: Ident(g), pos: Pos { line: 5, column: 5 } }
+Posed { node: OpenParen, pos: Pos { line: 5, column: 6 } }
+Posed { node: Number(3), pos: Pos { line: 5, column: 7 } }
+Posed { node: Comma, pos: Pos { line: 5, column: 8 } }
+Posed { node: Str(one), pos: Pos { line: 5, column: 9 } }
+Posed { node: Comma, pos: Pos { line: 5, column: 14 } }
+Posed { node: Number(5), pos: Pos { line: 5, column: 15 } }
+Posed { node: CloseParen, pos: Pos { line: 5, column: 16 } }
+Posed { node: Ident(end), pos: Pos { line: 6, column: 1 } }

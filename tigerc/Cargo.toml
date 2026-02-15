@@ -9,3 +9,6 @@ indexmap = "2.2.6"
 tigerc-macros = { path = "../tigerc-macros" }
 clap = { version = "4.5.27", features = ["derive"] }
 log = "0.4.25"
+
+[dev-dependencies]
+insta = { version = "1.40", features = ["yaml"] }

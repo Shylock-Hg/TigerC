@@ -1,0 +1,20 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test40.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(function), pos: Pos { line: 3, column: 5 } }
+Posed { node: Ident(g), pos: Pos { line: 3, column: 14 } }
+Posed { node: OpenParen, pos: Pos { line: 3, column: 15 } }
+Posed { node: Ident(a), pos: Pos { line: 3, column: 16 } }
+Posed { node: Colon, pos: Pos { line: 3, column: 17 } }
+Posed { node: Ident(int), pos: Pos { line: 3, column: 18 } }
+Posed { node: CloseParen, pos: Pos { line: 3, column: 21 } }
+Posed { node: Eq, pos: Pos { line: 3, column: 23 } }
+Posed { node: Ident(a), pos: Pos { line: 3, column: 25 } }
+Posed { node: Ident(in), pos: Pos { line: 4, column: 1 } }
+Posed { node: Ident(g), pos: Pos { line: 5, column: 5 } }
+Posed { node: OpenParen, pos: Pos { line: 5, column: 6 } }
+Posed { node: Number(2), pos: Pos { line: 5, column: 7 } }
+Posed { node: CloseParen, pos: Pos { line: 5, column: 8 } }
+Posed { node: Ident(end), pos: Pos { line: 6, column: 1 } }

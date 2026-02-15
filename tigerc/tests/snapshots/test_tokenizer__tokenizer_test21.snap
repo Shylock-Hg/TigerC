@@ -1,0 +1,34 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test21.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(function), pos: Pos { line: 5, column: 1 } }
+Posed { node: Ident(nfactor), pos: Pos { line: 5, column: 10 } }
+Posed { node: OpenParen, pos: Pos { line: 5, column: 17 } }
+Posed { node: Ident(n), pos: Pos { line: 5, column: 18 } }
+Posed { node: Colon, pos: Pos { line: 5, column: 19 } }
+Posed { node: Ident(int), pos: Pos { line: 5, column: 21 } }
+Posed { node: CloseParen, pos: Pos { line: 5, column: 24 } }
+Posed { node: Eq, pos: Pos { line: 5, column: 26 } }
+Posed { node: Ident(if), pos: Pos { line: 6, column: 9 } }
+Posed { node: Ident(n), pos: Pos { line: 6, column: 13 } }
+Posed { node: Eq, pos: Pos { line: 6, column: 15 } }
+Posed { node: Number(0), pos: Pos { line: 6, column: 17 } }
+Posed { node: Ident(then), pos: Pos { line: 7, column: 13 } }
+Posed { node: Number(1), pos: Pos { line: 7, column: 18 } }
+Posed { node: Ident(else), pos: Pos { line: 8, column: 13 } }
+Posed { node: Ident(n), pos: Pos { line: 8, column: 18 } }
+Posed { node: Star, pos: Pos { line: 8, column: 20 } }
+Posed { node: Ident(nfactor), pos: Pos { line: 8, column: 22 } }
+Posed { node: OpenParen, pos: Pos { line: 8, column: 29 } }
+Posed { node: Ident(n), pos: Pos { line: 8, column: 30 } }
+Posed { node: Minus, pos: Pos { line: 8, column: 31 } }
+Posed { node: Number(1), pos: Pos { line: 8, column: 32 } }
+Posed { node: CloseParen, pos: Pos { line: 8, column: 33 } }
+Posed { node: Ident(in), pos: Pos { line: 10, column: 1 } }
+Posed { node: Ident(nfactor), pos: Pos { line: 11, column: 5 } }
+Posed { node: OpenParen, pos: Pos { line: 11, column: 12 } }
+Posed { node: Number(10), pos: Pos { line: 11, column: 13 } }
+Posed { node: CloseParen, pos: Pos { line: 11, column: 15 } }
+Posed { node: Ident(end), pos: Pos { line: 12, column: 1 } }

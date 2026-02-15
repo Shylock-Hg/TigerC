@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test9.tig\")"
+---
+if ((5 > 4)) then 13 else " "

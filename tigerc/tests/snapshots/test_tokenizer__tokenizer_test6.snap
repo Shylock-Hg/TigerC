@@ -1,0 +1,45 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test6.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(function), pos: Pos { line: 4, column: 1 } }
+Posed { node: Ident(do_nothing1), pos: Pos { line: 4, column: 10 } }
+Posed { node: OpenParen, pos: Pos { line: 4, column: 21 } }
+Posed { node: Ident(a), pos: Pos { line: 4, column: 22 } }
+Posed { node: Colon, pos: Pos { line: 4, column: 23 } }
+Posed { node: Ident(int), pos: Pos { line: 4, column: 25 } }
+Posed { node: Comma, pos: Pos { line: 4, column: 28 } }
+Posed { node: Ident(b), pos: Pos { line: 4, column: 30 } }
+Posed { node: Colon, pos: Pos { line: 4, column: 31 } }
+Posed { node: Ident(string), pos: Pos { line: 4, column: 33 } }
+Posed { node: CloseParen, pos: Pos { line: 4, column: 39 } }
+Posed { node: Eq, pos: Pos { line: 4, column: 40 } }
+Posed { node: Ident(do_nothing2), pos: Pos { line: 5, column: 9 } }
+Posed { node: OpenParen, pos: Pos { line: 5, column: 20 } }
+Posed { node: Ident(a), pos: Pos { line: 5, column: 21 } }
+Posed { node: Plus, pos: Pos { line: 5, column: 22 } }
+Posed { node: Number(1), pos: Pos { line: 5, column: 23 } }
+Posed { node: CloseParen, pos: Pos { line: 5, column: 24 } }
+Posed { node: Ident(function), pos: Pos { line: 7, column: 1 } }
+Posed { node: Ident(do_nothing2), pos: Pos { line: 7, column: 10 } }
+Posed { node: OpenParen, pos: Pos { line: 7, column: 21 } }
+Posed { node: Ident(d), pos: Pos { line: 7, column: 22 } }
+Posed { node: Colon, pos: Pos { line: 7, column: 23 } }
+Posed { node: Ident(int), pos: Pos { line: 7, column: 25 } }
+Posed { node: CloseParen, pos: Pos { line: 7, column: 28 } }
+Posed { node: Eq, pos: Pos { line: 7, column: 30 } }
+Posed { node: Ident(do_nothing1), pos: Pos { line: 8, column: 9 } }
+Posed { node: OpenParen, pos: Pos { line: 8, column: 20 } }
+Posed { node: Ident(d), pos: Pos { line: 8, column: 21 } }
+Posed { node: Comma, pos: Pos { line: 8, column: 22 } }
+Posed { node: Str(str), pos: Pos { line: 8, column: 24 } }
+Posed { node: CloseParen, pos: Pos { line: 8, column: 29 } }
+Posed { node: Ident(in), pos: Pos { line: 10, column: 1 } }
+Posed { node: Ident(do_nothing1), pos: Pos { line: 11, column: 5 } }
+Posed { node: OpenParen, pos: Pos { line: 11, column: 16 } }
+Posed { node: Number(0), pos: Pos { line: 11, column: 17 } }
+Posed { node: Comma, pos: Pos { line: 11, column: 18 } }
+Posed { node: Str(str2), pos: Pos { line: 11, column: 20 } }
+Posed { node: CloseParen, pos: Pos { line: 11, column: 26 } }
+Posed { node: Ident(end), pos: Pos { line: 12, column: 1 } }

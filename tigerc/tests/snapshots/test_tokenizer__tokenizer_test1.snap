@@ -1,0 +1,25 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test1.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(type), pos: Pos { line: 3, column: 5 } }
+Posed { node: Ident(arrtype), pos: Pos { line: 3, column: 11 } }
+Posed { node: Eq, pos: Pos { line: 3, column: 19 } }
+Posed { node: Ident(array), pos: Pos { line: 3, column: 21 } }
+Posed { node: Ident(of), pos: Pos { line: 3, column: 27 } }
+Posed { node: Ident(int), pos: Pos { line: 3, column: 30 } }
+Posed { node: Ident(var), pos: Pos { line: 4, column: 5 } }
+Posed { node: Ident(arr1), pos: Pos { line: 4, column: 9 } }
+Posed { node: Colon, pos: Pos { line: 4, column: 13 } }
+Posed { node: Ident(arrtype), pos: Pos { line: 4, column: 14 } }
+Posed { node: Assign, pos: Pos { line: 4, column: 22 } }
+Posed { node: Ident(arrtype), pos: Pos { line: 4, column: 25 } }
+Posed { node: OpenBracket, pos: Pos { line: 4, column: 33 } }
+Posed { node: Number(10), pos: Pos { line: 4, column: 34 } }
+Posed { node: CloseBracket, pos: Pos { line: 4, column: 36 } }
+Posed { node: Ident(of), pos: Pos { line: 4, column: 38 } }
+Posed { node: Number(0), pos: Pos { line: 4, column: 41 } }
+Posed { node: Ident(in), pos: Pos { line: 5, column: 1 } }
+Posed { node: Ident(arr1), pos: Pos { line: 6, column: 5 } }
+Posed { node: Ident(end), pos: Pos { line: 7, column: 1 } }

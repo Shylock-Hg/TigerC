@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test16.tig\")"
+---
+let type a = c type b = a type c = d type d = a  in "" end

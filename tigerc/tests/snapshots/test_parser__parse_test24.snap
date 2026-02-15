@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test24.tig\")"
+---
+let var d := 0  in d[3] end

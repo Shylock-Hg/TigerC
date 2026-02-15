@@ -1,0 +1,16 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test11.tig\")"
+---
+Posed { node: Ident(for), pos: Pos { line: 2, column: 1 } }
+Posed { node: Ident(i), pos: Pos { line: 2, column: 5 } }
+Posed { node: Assign, pos: Pos { line: 2, column: 6 } }
+Posed { node: Number(10), pos: Pos { line: 2, column: 8 } }
+Posed { node: Ident(to), pos: Pos { line: 2, column: 11 } }
+Posed { node: Str( ), pos: Pos { line: 2, column: 14 } }
+Posed { node: Ident(do), pos: Pos { line: 2, column: 18 } }
+Posed { node: Ident(i), pos: Pos { line: 3, column: 5 } }
+Posed { node: Assign, pos: Pos { line: 3, column: 7 } }
+Posed { node: Ident(i), pos: Pos { line: 3, column: 10 } }
+Posed { node: Minus, pos: Pos { line: 3, column: 12 } }
+Posed { node: Number(1), pos: Pos { line: 3, column: 14 } }

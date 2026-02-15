@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test22.tig\")"
+---
+let type rectype = {name: string, id: int} var rec1 := rectype {name = "Name", id = 0}  in rec1.nam := "asd" end

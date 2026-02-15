@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test8.tig\")"
+---
+if ((10 > 20)) then 30 else 40

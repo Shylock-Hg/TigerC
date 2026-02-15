@@ -1,0 +1,55 @@
+---
+source: tigerc/tests/test_tokenizer.rs
+expression: "tokenize_snapshot(\"tests/testcases/test14.tig\")"
+---
+Posed { node: Ident(let), pos: Pos { line: 3, column: 1 } }
+Posed { node: Ident(type), pos: Pos { line: 5, column: 5 } }
+Posed { node: Ident(arrtype), pos: Pos { line: 5, column: 10 } }
+Posed { node: Eq, pos: Pos { line: 5, column: 18 } }
+Posed { node: Ident(array), pos: Pos { line: 5, column: 20 } }
+Posed { node: Ident(of), pos: Pos { line: 5, column: 26 } }
+Posed { node: Ident(int), pos: Pos { line: 5, column: 29 } }
+Posed { node: Ident(type), pos: Pos { line: 6, column: 5 } }
+Posed { node: Ident(rectype), pos: Pos { line: 6, column: 10 } }
+Posed { node: Eq, pos: Pos { line: 6, column: 18 } }
+Posed { node: OpenBrace, pos: Pos { line: 6, column: 20 } }
+Posed { node: Ident(name), pos: Pos { line: 6, column: 21 } }
+Posed { node: Colon, pos: Pos { line: 6, column: 25 } }
+Posed { node: Ident(string), pos: Pos { line: 6, column: 26 } }
+Posed { node: Comma, pos: Pos { line: 6, column: 32 } }
+Posed { node: Ident(id), pos: Pos { line: 6, column: 34 } }
+Posed { node: Colon, pos: Pos { line: 6, column: 36 } }
+Posed { node: Ident(int), pos: Pos { line: 6, column: 38 } }
+Posed { node: CloseBrace, pos: Pos { line: 6, column: 41 } }
+Posed { node: Ident(var), pos: Pos { line: 8, column: 5 } }
+Posed { node: Ident(rec), pos: Pos { line: 8, column: 9 } }
+Posed { node: Assign, pos: Pos { line: 8, column: 13 } }
+Posed { node: Ident(rectype), pos: Pos { line: 8, column: 16 } }
+Posed { node: OpenBrace, pos: Pos { line: 8, column: 24 } }
+Posed { node: Ident(name), pos: Pos { line: 8, column: 25 } }
+Posed { node: Eq, pos: Pos { line: 8, column: 29 } }
+Posed { node: Str(aname), pos: Pos { line: 8, column: 30 } }
+Posed { node: Comma, pos: Pos { line: 8, column: 37 } }
+Posed { node: Ident(id), pos: Pos { line: 8, column: 39 } }
+Posed { node: Eq, pos: Pos { line: 8, column: 41 } }
+Posed { node: Number(0), pos: Pos { line: 8, column: 42 } }
+Posed { node: CloseBrace, pos: Pos { line: 8, column: 43 } }
+Posed { node: Ident(var), pos: Pos { line: 9, column: 5 } }
+Posed { node: Ident(arr), pos: Pos { line: 9, column: 9 } }
+Posed { node: Assign, pos: Pos { line: 9, column: 13 } }
+Posed { node: Ident(arrtype), pos: Pos { line: 9, column: 16 } }
+Posed { node: OpenBracket, pos: Pos { line: 9, column: 24 } }
+Posed { node: Number(3), pos: Pos { line: 9, column: 25 } }
+Posed { node: CloseBracket, pos: Pos { line: 9, column: 26 } }
+Posed { node: Ident(of), pos: Pos { line: 9, column: 28 } }
+Posed { node: Number(0), pos: Pos { line: 9, column: 31 } }
+Posed { node: Ident(in), pos: Pos { line: 11, column: 1 } }
+Posed { node: Ident(if), pos: Pos { line: 12, column: 5 } }
+Posed { node: Ident(rec), pos: Pos { line: 12, column: 8 } }
+Posed { node: Ne, pos: Pos { line: 12, column: 12 } }
+Posed { node: Ident(arr), pos: Pos { line: 12, column: 15 } }
+Posed { node: Ident(then), pos: Pos { line: 12, column: 19 } }
+Posed { node: Number(3), pos: Pos { line: 12, column: 24 } }
+Posed { node: Ident(else), pos: Pos { line: 12, column: 26 } }
+Posed { node: Number(4), pos: Pos { line: 12, column: 31 } }
+Posed { node: Ident(end), pos: Pos { line: 13, column: 1 } }

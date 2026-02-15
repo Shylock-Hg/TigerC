@@ -1,0 +1,18 @@
+---
+source: tigerc/tests/test_compile.rs
+assertion_line: 11
+expression: result
+---
+global main
+section .rodata
+__anon_136: db "0", 0
+__anon_145: db "9", 0
+__anon_166: db " ", 0
+__anon_170: db "\n", 0
+__anon_195: db "0", 0
+__anon_307: db "0", 0
+__anon_318: db "-", 0
+__anon_322: db "0", 0
+__anon_340: db "\n", 0
+__anon_341: db " ", 0
+section .text

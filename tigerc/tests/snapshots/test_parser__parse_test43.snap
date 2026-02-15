@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test43.tig\")"
+---
+let var a := ()  in (a + 3) end

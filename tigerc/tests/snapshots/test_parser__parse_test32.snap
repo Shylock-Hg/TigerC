@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test32.tig\")"
+---
+let type arrayty = array of int var a := arrayty[10] of " "  in 0 end

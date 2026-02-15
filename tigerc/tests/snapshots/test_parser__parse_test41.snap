@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test41.tig\")"
+---
+let type a = int  in let type a = string  in 0 end end

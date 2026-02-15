@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_parser.rs
+expression: "parse_snapshot(\"tests/testcases/test11.tig\")"
+---
+for i := 10 to " " do i := (i - 1)
