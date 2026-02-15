@@ -83,4 +83,8 @@ impl<T> Graph<T> {
     pub fn last_entry(&self) -> Entry {
         Entry(self.nodes.len() - 1)
     }
+
+    pub fn nodes(&self) -> &Vec<Node<T>> {
+        &self.nodes
+    }
 }

@@ -240,6 +240,27 @@ impl Frame for FrameAmd64 {
         Self::rax()
     }
 
+    fn colors() -> Vec<Temp> {
+        vec![
+            //Self::rbp(),
+            //Self::rsp(),
+            Self::rax(),
+            Self::rbx(),
+            Self::rcx(),
+            Self::rdx(),
+            Self::rdi(),
+            Self::rsi(),
+            Self::r8(),
+            Self::r9(),
+            Self::r10(),
+            Self::r11(),
+            Self::r12(),
+            Self::r13(),
+            Self::r14(),
+            Self::r15(),
+        ]
+    }
+
     fn word_size() -> i64 {
         WORD_SIZE
     }

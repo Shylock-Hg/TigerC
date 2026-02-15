@@ -78,6 +78,11 @@ impl InterferenceGraph {
     fn add_move(&mut self, mv: Move) {
         self.m_list.push(mv)
     }
+
+    pub fn degree(&self, t: &Temp) -> usize {
+        let node = self.g.node(&self.g.get_node(&t).unwrap());
+        node.outcome().len()
+    }
 }
 
 pub struct Move {

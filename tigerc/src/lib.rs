@@ -2,7 +2,7 @@ use std::io::Write;
 
 use translate::Fragment;
 
-use crate::frame::Frame;
+use crate::{amd64::FrameAmd64, frame::Frame};
 
 pub mod amd64;
 pub mod asm;
@@ -20,6 +20,7 @@ pub mod ir;
 pub mod ir_gen;
 pub mod liveness;
 pub mod parser;
+pub mod reg_alloc;
 pub mod stack;
 pub mod symbol_table;
 pub mod temp;
@@ -79,8 +80,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             trace.transform_last(|v| asm::Block {
                 instructions: frame.borrow().proc_entry_exit2(v.instructions),
             });
-            let flow = flow::flow_analyze(&trace);
-            let inter_g = liveness::liveness_analyze(&flow, trace.done_label);
+            let trace = reg_alloc::alloc::<FrameAmd64>(trace);
         }
         canon::Fragment::StringLiteral(..) => (),
     });
