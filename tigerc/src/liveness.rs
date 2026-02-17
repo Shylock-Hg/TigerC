@@ -122,7 +122,7 @@ pub fn liveness_analyze<'a>(
     let mut iter_g = InterferenceGraph {
         g: Graph::<Temp>::new(),
     };
-    let mut work_move_list = Vec::<ProgramPoint<'a>>::new();
+    let mut work_list_moves = Vec::<ProgramPoint<'a>>::new();
     let mut move_list = HashMap::<Temp, Vec<ProgramPoint<'a>>>::new();
     let mut visited = HashSet::<Entry>::new();
     build_iterference_graph(
@@ -130,11 +130,11 @@ pub fn liveness_analyze<'a>(
         &live_map,
         done_node,
         &mut iter_g,
-        &mut work_move_list,
+        &mut work_list_moves,
         &mut move_list,
         &mut visited,
     );
-    (iter_g, work_move_list, move_list)
+    (iter_g, work_list_moves, move_list)
 }
 
 fn build_iterference_graph<'a>(
@@ -142,14 +142,14 @@ fn build_iterference_graph<'a>(
     live_map: &HashMap<ProgramPoint, HashSet<Temp>>,
     node: &Node<&'a asm::Block>,
     iter_g: &mut InterferenceGraph,
-    work_move_list: &mut Vec<ProgramPoint<'a>>,
+    work_list_moves: &mut Vec<ProgramPoint<'a>>,
     move_list: &mut HashMap<Temp, Vec<ProgramPoint<'a>>>,
     visited: &mut HashSet<Entry>,
 ) {
     let block = node.value();
     for (offset, inst) in block.instructions.iter().enumerate() {
         if inst.is_move() {
-            work_move_list.push(ProgramPoint { block, offset });
+            work_list_moves.push(ProgramPoint { block, offset });
         }
         // If def is not used, it won't interference b at all
         // But this will be prevent in previous stages
@@ -185,7 +185,7 @@ fn build_iterference_graph<'a>(
             live_map,
             node,
             iter_g,
-            work_move_list,
+            work_list_moves,
             move_list,
             visited,
         );

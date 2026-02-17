@@ -33,7 +33,7 @@ impl<'a> Alloc<'a> {
     pub fn new<F: Frame>(
         flow: FlowGraph<'a>,
         inter_g: InterferenceGraph,
-        work_move_list: Vec<ProgramPoint<'a>>,
+        work_list_moves: Vec<ProgramPoint<'a>>,
         move_list: HashMap<Temp, Vec<ProgramPoint<'a>>>,
     ) -> Self {
         let k = F::colors().len();
@@ -69,7 +69,7 @@ impl<'a> Alloc<'a> {
             coalesced_moves: Vec::<ProgramPoint<'a>>::new(),
             constrained_moves: Vec::<ProgramPoint<'a>>::new(),
             frozen_moves: Vec::<ProgramPoint<'a>>::new(),
-            worklist_moves: work_move_list,
+            worklist_moves: work_list_moves,
             active_moves: Vec::<ProgramPoint<'a>>::new(),
             move_list,
             flow,
@@ -104,8 +104,8 @@ impl<'a> Alloc<'a> {
 
 pub fn alloc<F: Frame>(trace: asm::Trace) -> asm::Trace {
     let flow = flow::flow_analyze(&trace);
-    let (inter_g, work_move_list, work_list) = liveness::liveness_analyze(&flow, trace.done_label);
-    let alloc = Alloc::new::<F>(flow, inter_g, work_move_list, work_list);
+    let (inter_g, work_list_move, work_list) = liveness::liveness_analyze(&flow, trace.done_label);
+    let alloc = Alloc::new::<F>(flow, inter_g, work_list_move, work_list);
     // TODO return the rewritten trace
     trace
 }
