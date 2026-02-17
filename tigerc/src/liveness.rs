@@ -12,6 +12,7 @@ use crate::{
     temp::{Label, Temp},
 };
 
+#[derive(Clone)]
 pub struct ProgramPoint<'a> {
     pub block: &'a asm::Block,
     // offset in this Block
@@ -42,7 +43,6 @@ pub struct LiveInterval<'a> {
 
 pub struct InterferenceGraph {
     pub g: Graph<Temp>,
-    pub m_list: Vec<Move>,
 }
 
 impl InterferenceGraph {
@@ -75,13 +75,26 @@ impl InterferenceGraph {
         b_node.add_outcome(a_entry);
     }
 
-    fn add_move(&mut self, mv: Move) {
-        self.m_list.push(mv)
-    }
+    //    fn add_move(&mut self, mv: Move) {
+    //        self.m_list.push(mv)
+    //    }
 
     pub fn degree(&self, t: &Temp) -> usize {
         let node = self.g.node(&self.g.get_node(&t).unwrap());
         node.outcome().len()
+    }
+
+    pub fn degree_entry(&self, e: &Entry) -> usize {
+        let node = self.g.node(e);
+        node.outcome().len()
+    }
+
+    pub fn pop_node(&mut self, t: &Temp) -> Node<Temp> {
+        self.g.pop_node(&self.g.get_node(t).unwrap())
+    }
+
+    pub fn node(&mut self, e: &Entry) -> &Node<Temp> {
+        self.g.node(e)
     }
 }
 
@@ -90,7 +103,14 @@ pub struct Move {
     pub src: Temp,
 }
 
-pub fn liveness_analyze(flow: &FlowGraph, done_label: Label) -> InterferenceGraph {
+pub fn liveness_analyze<'a>(
+    flow: &FlowGraph<'a>,
+    done_label: Label,
+) -> (
+    InterferenceGraph,
+    Vec<ProgramPoint<'a>>,
+    HashMap<Temp, Vec<ProgramPoint<'a>>>,
+) {
     let mut live_map = HashMap::<ProgramPoint, HashSet<Temp>>::new();
     let done_node = flow.done_node();
     assert!(done_node.value().start_label() == done_label);
@@ -101,22 +121,36 @@ pub fn liveness_analyze(flow: &FlowGraph, done_label: Label) -> InterferenceGrap
     let live_map = live_map; // avoid modify
     let mut iter_g = InterferenceGraph {
         g: Graph::<Temp>::new(),
-        m_list: vec![],
     };
+    let mut work_move_list = Vec::<ProgramPoint<'a>>::new();
+    let mut move_list = HashMap::<Temp, Vec<ProgramPoint<'a>>>::new();
     let mut visited = HashSet::<Entry>::new();
-    build_iterference_graph(flow, &live_map, done_node, &mut iter_g, &mut visited);
-    iter_g
+    build_iterference_graph(
+        flow,
+        &live_map,
+        done_node,
+        &mut iter_g,
+        &mut work_move_list,
+        &mut move_list,
+        &mut visited,
+    );
+    (iter_g, work_move_list, move_list)
 }
 
 fn build_iterference_graph<'a>(
-    flow: &'a FlowGraph,
+    flow: &FlowGraph<'a>,
     live_map: &HashMap<ProgramPoint, HashSet<Temp>>,
     node: &Node<&'a asm::Block>,
     iter_g: &mut InterferenceGraph,
+    work_move_list: &mut Vec<ProgramPoint<'a>>,
+    move_list: &mut HashMap<Temp, Vec<ProgramPoint<'a>>>,
     visited: &mut HashSet<Entry>,
 ) {
     let block = node.value();
     for (offset, inst) in block.instructions.iter().enumerate() {
+        if inst.is_move() {
+            work_move_list.push(ProgramPoint { block, offset });
+        }
         // If def is not used, it won't interference b at all
         // But this will be prevent in previous stages
         let use_ = inst.use_();
@@ -127,7 +161,14 @@ fn build_iterference_graph<'a>(
                     iter_g.add_interference(def, *b);
                 }
                 if inst.is_move() {
-                    iter_g.add_move(Move { dst: def, src: *b });
+                    move_list
+                        .entry(def)
+                        .and_modify(|v| v.push(ProgramPoint { block, offset }))
+                        .or_insert(vec![ProgramPoint { block, offset }]);
+                    move_list
+                        .entry(*b)
+                        .and_modify(|v| v.push(ProgramPoint { block, offset }))
+                        .or_insert(vec![ProgramPoint { block, offset }]);
                 }
             }
         }
@@ -139,7 +180,15 @@ fn build_iterference_graph<'a>(
         }
         visited.insert(*income);
         let node = flow.get(income);
-        build_iterference_graph(flow, live_map, node, iter_g, visited);
+        build_iterference_graph(
+            flow,
+            live_map,
+            node,
+            iter_g,
+            work_move_list,
+            move_list,
+            visited,
+        );
     }
 }
 

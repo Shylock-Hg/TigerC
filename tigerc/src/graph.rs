@@ -87,4 +87,19 @@ impl<T> Graph<T> {
     pub fn nodes(&self) -> &Vec<Node<T>> {
         &self.nodes
     }
+
+    pub fn pop_node(&mut self, entry: &Entry) -> Node<T> {
+        let node = self.nodes.remove(entry.0);
+        for outcome in &node.outcome {
+            let neighbor = self.mut_node(&outcome);
+            neighbor.income.retain(|v| v != entry);
+            neighbor.outcome.retain(|v| v != entry);
+        }
+        for income in &node.income {
+            let neighbor = self.mut_node(&income);
+            neighbor.income.retain(|v| v != entry);
+            neighbor.outcome.retain(|v| v != entry);
+        }
+        node
+    }
 }
