@@ -4,6 +4,7 @@ use crate::{
     asm,
     flow::{self, FlowGraph},
     frame::Frame,
+    graph::Entry,
     liveness::{self, InterferenceGraph, ProgramPoint},
     stack::Stack,
     temp::Temp,
@@ -86,19 +87,54 @@ impl<'a> Alloc<'a> {
             self.select_stack.push(n);
             let node = self.inter_g.pop_node(&n);
             for outcome in node.outcome() {
-                if self.inter_g.degree_entry(outcome) == self.k - 1 {}
+                if self.inter_g.degree_entry(outcome) == self.k - 1 {
+                    let m = self.inter_g.node(outcome);
+                    let mt = m.value().to_owned();
+                    let mut nodes = m.outcome().clone();
+                    nodes.push(*outcome);
+                    self.enable_moves(
+                        nodes
+                            .into_iter()
+                            .map(|v| Self::to_temp(&self.inter_g, &v))
+                            .collect(),
+                    );
+                    self.spill_work_list.retain(|v| *v != mt);
+                    if self.is_move_related(&mt) {
+                        self.freeze_work_list.push(mt);
+                    } else {
+                        self.simplify_work_list.push(mt);
+                    }
+                }
             }
         }
     }
 
-    fn node_moves(&self, t: &Temp) -> Vec<ProgramPoint<'_>> {
-        let mut res = self.active_moves.clone();
-        res.extend(self.worklist_moves.clone());
-        // TODO intersect with work_list[n]
+    fn to_temp(inter_g: &InterferenceGraph, e: &Entry) -> Temp {
+        inter_g.node(e).value().to_owned()
+    }
+
+    fn node_moves(&self, t: &Temp) -> Vec<ProgramPoint<'a>> {
         let wn = self.move_list.get(t).cloned().unwrap_or(vec![]);
-        res.into_iter()
-            .filter(|v| wn.contains(v))
+        wn.into_iter()
+            .filter(|v| self.active_moves.contains(v) || self.worklist_moves.contains(v))
             .collect::<Vec<_>>()
+    }
+
+    fn enable_moves(&mut self, nodes: Vec<Temp>) {
+        for n in nodes {
+            let nm = self.node_moves(&n.clone());
+            for m in nm {
+                let i = self.active_moves.iter().position(|v| *v == m);
+                if let Some(i) = i {
+                    let removed = self.active_moves.remove(i);
+                    self.worklist_moves.push(removed);
+                }
+            }
+        }
+    }
+
+    fn is_move_related(&self, t: &Temp) -> bool {
+        self.move_list.contains_key(t)
     }
 }
 

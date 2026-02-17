@@ -93,7 +93,7 @@ impl InterferenceGraph {
         self.g.pop_node(&self.g.get_node(t).unwrap())
     }
 
-    pub fn node(&mut self, e: &Entry) -> &Node<Temp> {
+    pub fn node(&self, e: &Entry) -> &Node<Temp> {
         self.g.node(e)
     }
 }
