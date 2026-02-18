@@ -41,6 +41,7 @@ impl<T> Node<T> {
 
 #[derive(Debug)]
 pub struct Graph<T> {
+    // TODO: remove Entry and use HashMap<T, (income, outcome)>
     nodes: Vec<Node<T>>,
 }
 
