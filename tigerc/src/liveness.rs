@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{hash_map::Iter, HashMap, HashSet},
     hash::Hash,
     ptr,
 };
@@ -7,7 +7,7 @@ use std::{
 use crate::{
     asm,
     flow::FlowGraph,
-    graph::{Entry, Graph, Node},
+    graph::{Entry, Node},
     symbol_table::SymbolTable,
     temp::{Label, Temp},
 };
@@ -41,70 +41,59 @@ pub struct LiveInterval<'a> {
     pub interval: Vec<ProgramPoint<'a>>,
 }
 
+pub struct Neighbor {
+    pub outcome: Vec<Temp>,
+}
+
 pub struct InterferenceGraph {
-    pub g: Graph<Temp>,
+    pub g: HashMap<Temp, Neighbor>,
 }
 
 impl InterferenceGraph {
     pub fn add_interference(&mut self, a: Temp, b: Temp) {
-        let b_entry = {
-            let res = self.g.get_node(&b);
-            match res {
-                Some(v) => v,
-                None => {
-                    self.g.add_node(Node::<Temp>::new(a, vec![], vec![]));
-                    self.g.last_entry()
-                }
-            }
-        };
-
-        let a_entry = {
-            let res = self.g.get_node(&a);
-            let (a_entry, a_node) = match res {
-                Some(v) => (v.clone(), self.g.mut_node(&v)),
-                None => {
-                    self.g.add_node(Node::<Temp>::new(a, vec![], vec![]));
-                    (self.g.last_entry(), self.g.last_node_mut())
-                }
-            };
-            a_node.add_outcome(b_entry);
-            a_entry
-        };
-
-        let b_node = self.g.mut_node(&b_entry);
-        b_node.add_outcome(a_entry);
+        self.g
+            .entry(a)
+            .and_modify(|v| v.outcome.push(b))
+            .or_insert(Neighbor { outcome: vec![b] });
+        self.g
+            .entry(b)
+            .and_modify(|v| v.outcome.push(a))
+            .or_insert(Neighbor { outcome: vec![a] });
     }
 
     //    fn add_move(&mut self, mv: Move) {
     //        self.m_list.push(mv)
     //    }
 
+    pub fn neighbor_mut(&mut self, t: &Temp) -> &mut Neighbor {
+        self.g.get_mut(t).unwrap()
+    }
+
     pub fn degree(&self, t: &Temp) -> usize {
-        let node = self.g.node(&self.g.get_node(&t).unwrap());
-        node.outcome().len()
+        let node = self.g.get(t).unwrap();
+        node.outcome.len()
     }
 
-    pub fn degree_entry(&self, e: &Entry) -> usize {
-        let node = self.g.node(e);
-        node.outcome().len()
+    pub fn pop_node(&mut self, t: &Temp) -> Neighbor {
+        let node = self.g.remove(t).unwrap();
+        for outcome in &node.outcome {
+            let neighbor = self.g.get_mut(&outcome).unwrap();
+            neighbor.outcome.retain(|v| v != t);
+        }
+        node
     }
 
-    pub fn pop_node(&mut self, t: &Temp) -> Node<Temp> {
-        self.g.pop_node(&self.g.get_node(t).unwrap())
-    }
-
-    pub fn node(&self, e: &Entry) -> &Node<Temp> {
-        self.g.node(e)
-    }
-
-    pub fn node_of_temp(&self, t: &Temp) -> &Node<Temp> {
-        self.g.node(&self.g.get_node(&t).unwrap())
+    pub fn node(&self, t: &Temp) -> &Neighbor {
+        self.g.get(t).unwrap()
     }
 
     pub fn is_interfered(&self, a: &Temp, b: &Temp) -> bool {
-        let an = self.node_of_temp(a);
-        let be = self.g.get_node(b).unwrap();
-        an.outcome().contains(&be)
+        let an = self.node(a);
+        an.outcome.contains(b)
+    }
+
+    pub fn iter(&self) -> Iter<'_, Temp, Neighbor> {
+        self.g.iter()
     }
 }
 
@@ -126,9 +115,7 @@ pub fn liveness_analyze<'a>(
     let mut current = HashSet::<Temp>::new();
     build_live_map(flow, done_node, &mut live_map, &mut visited, &mut current);
     let live_map = live_map; // avoid modify
-    let mut iter_g = InterferenceGraph {
-        g: Graph::<Temp>::new(),
-    };
+    let mut iter_g = InterferenceGraph { g: HashMap::new() };
     let mut work_list_moves = Vec::<Move>::new();
     let mut move_list = HashMap::<Temp, Vec<Move>>::new();
     let mut visited = HashSet::<Entry>::new();

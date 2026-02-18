@@ -4,7 +4,6 @@ use crate::{
     asm,
     flow::{self, FlowGraph},
     frame::Frame,
-    graph::Entry,
     liveness::{self, InterferenceGraph, Move, ProgramPoint},
     stack::Stack,
     temp::Temp,
@@ -42,24 +41,19 @@ impl<'a> Alloc<'a> {
         move_list: HashMap<Temp, Vec<Move>>,
     ) -> Self {
         let k = F::colors().len();
-        let initial = inter_g
-            .g
-            .nodes()
-            .iter()
-            .map(|v| *v.value())
-            .collect::<Vec<_>>();
+        let initial = inter_g.iter().map(|(k, _)| k).collect::<Vec<_>>();
         let mut spill_work_list = vec![];
         let mut simplify_work_list = vec![];
         let mut freeze_work_list = vec![];
         for n in initial {
             if inter_g.degree(&n) >= k {
-                spill_work_list.push(n);
+                spill_work_list.push(*n);
             } else if move_list.contains_key(&n)
             // TODO speed up this liner find?
             {
-                freeze_work_list.push(n);
+                freeze_work_list.push(*n);
             } else {
-                simplify_work_list.push(n);
+                simplify_work_list.push(*n);
             }
         }
 
@@ -93,23 +87,17 @@ impl<'a> Alloc<'a> {
         if let Some(n) = n {
             self.select_stack.push(n);
             let node = self.inter_g.pop_node(&n);
-            for outcome in node.outcome() {
-                if self.inter_g.degree_entry(outcome) == self.k - 1 {
-                    let m = self.inter_g.node(outcome);
-                    let mt = m.value().to_owned();
-                    let mut nodes = m.outcome().clone();
-                    nodes.push(*outcome);
-                    self.enable_moves(
-                        nodes
-                            .into_iter()
-                            .map(|v| Self::to_temp(&self.inter_g, &v))
-                            .collect(),
-                    );
-                    self.spill_work_list.retain(|v| *v != mt);
-                    if self.is_move_related(&mt) {
-                        self.freeze_work_list.push(mt);
+            for outcome in node.outcome {
+                if self.inter_g.degree(&outcome) == self.k - 1 {
+                    let m = self.inter_g.node(&outcome);
+                    let mut nodes = m.outcome.clone();
+                    nodes.push(outcome);
+                    self.enable_moves(nodes);
+                    self.spill_work_list.retain(|v| *v != outcome);
+                    if self.is_move_related(&outcome) {
+                        self.freeze_work_list.push(outcome);
                     } else {
-                        self.simplify_work_list.push(mt);
+                        self.simplify_work_list.push(outcome);
                     }
                 }
             }
@@ -158,9 +146,8 @@ impl<'a> Alloc<'a> {
         self.alias.insert(*v, *u);
         let res = self.move_list.remove(v).unwrap();
         self.move_list.get_mut(u).unwrap().extend(res);
-        for t in self.inter_g.node_of_temp(v).outcome().to_owned() {
-            let t = self.inter_g.node(&t).value();
-            self.inter_g.add_interference(*u, *t);
+        for t in self.inter_g.node(v).outcome.to_owned() {
+            self.inter_g.add_interference(*u, t);
         }
         self.inter_g.pop_node(v);
         if self.is_significant(u) && self.freeze_work_list.contains(u) {
@@ -173,13 +160,13 @@ impl<'a> Alloc<'a> {
 
     fn briggs(&self, u: &Temp, v: &Temp) -> bool {
         let mut k = 0;
-        for n in self.inter_g.node_of_temp(u).outcome() {
-            if self.is_significant(self.inter_g.node(n).value()) {
+        for n in &self.inter_g.node(u).outcome {
+            if self.is_significant(n) {
                 k += 1;
             }
         }
-        for n in self.inter_g.node_of_temp(v).outcome() {
-            if self.is_significant(self.inter_g.node(n).value()) {
+        for n in &self.inter_g.node(v).outcome {
+            if self.is_significant(n) {
                 k += 1;
             }
         }
@@ -187,10 +174,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn george(&self, u: &Temp, v: &Temp) -> bool {
-        self.inter_g.node_of_temp(v).outcome().iter().all(|t| {
-            let t = self.inter_g.node(t).value();
-            self.ok(t, u)
-        })
+        self.inter_g.node(v).outcome.iter().all(|t| self.ok(t, u))
     }
 
     fn ok(&self, t: &Temp, r: &Temp) -> bool {
@@ -203,10 +187,6 @@ impl<'a> Alloc<'a> {
             self.simplify_work_list
                 .push(self.freeze_work_list.remove(res));
         }
-    }
-
-    fn to_temp(inter_g: &InterferenceGraph, e: &Entry) -> Temp {
-        inter_g.node(e).value().to_owned()
     }
 
     fn node_moves(&self, t: &Temp) -> Vec<Move> {
