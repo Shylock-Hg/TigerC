@@ -96,8 +96,19 @@ impl InterferenceGraph {
     pub fn node(&self, e: &Entry) -> &Node<Temp> {
         self.g.node(e)
     }
+
+    pub fn node_of_temp(&self, t: &Temp) -> &Node<Temp> {
+        self.g.node(&self.g.get_node(&t).unwrap())
+    }
+
+    pub fn is_interfered(&self, a: &Temp, b: &Temp) -> bool {
+        let an = self.node_of_temp(a);
+        let be = self.g.get_node(b).unwrap();
+        an.outcome().contains(&be)
+    }
 }
 
+#[derive(PartialEq, Eq, Clone)]
 pub struct Move {
     pub dst: Temp,
     pub src: Temp,
@@ -106,11 +117,7 @@ pub struct Move {
 pub fn liveness_analyze<'a>(
     flow: &FlowGraph<'a>,
     done_label: Label,
-) -> (
-    InterferenceGraph,
-    Vec<ProgramPoint<'a>>,
-    HashMap<Temp, Vec<ProgramPoint<'a>>>,
-) {
+) -> (InterferenceGraph, Vec<Move>, HashMap<Temp, Vec<Move>>) {
     let mut live_map = HashMap::<ProgramPoint, HashSet<Temp>>::new();
     let done_node = flow.done_node();
     assert!(done_node.value().start_label() == done_label);
@@ -122,8 +129,8 @@ pub fn liveness_analyze<'a>(
     let mut iter_g = InterferenceGraph {
         g: Graph::<Temp>::new(),
     };
-    let mut work_list_moves = Vec::<ProgramPoint<'a>>::new();
-    let mut move_list = HashMap::<Temp, Vec<ProgramPoint<'a>>>::new();
+    let mut work_list_moves = Vec::<Move>::new();
+    let mut move_list = HashMap::<Temp, Vec<Move>>::new();
     let mut visited = HashSet::<Entry>::new();
     build_iterference_graph(
         flow,
@@ -142,15 +149,12 @@ fn build_iterference_graph<'a>(
     live_map: &HashMap<ProgramPoint, HashSet<Temp>>,
     node: &Node<&'a asm::Block>,
     iter_g: &mut InterferenceGraph,
-    work_list_moves: &mut Vec<ProgramPoint<'a>>,
-    move_list: &mut HashMap<Temp, Vec<ProgramPoint<'a>>>,
+    work_list_moves: &mut Vec<Move>,
+    move_list: &mut HashMap<Temp, Vec<Move>>,
     visited: &mut HashSet<Entry>,
 ) {
     let block = node.value();
     for (offset, inst) in block.instructions.iter().enumerate() {
-        if inst.is_move() {
-            work_list_moves.push(ProgramPoint { block, offset });
-        }
         // If def is not used, it won't interference b at all
         // But this will be prevent in previous stages
         let use_ = inst.use_();
@@ -161,14 +165,15 @@ fn build_iterference_graph<'a>(
                     iter_g.add_interference(def, *b);
                 }
                 if inst.is_move() {
+                    work_list_moves.push(Move { dst: def, src: *b });
                     move_list
                         .entry(def)
-                        .and_modify(|v| v.push(ProgramPoint { block, offset }))
-                        .or_insert(vec![ProgramPoint { block, offset }]);
+                        .and_modify(|v| v.push(Move { dst: def, src: *b }))
+                        .or_insert(vec![Move { dst: def, src: *b }]);
                     move_list
                         .entry(*b)
-                        .and_modify(|v| v.push(ProgramPoint { block, offset }))
-                        .or_insert(vec![ProgramPoint { block, offset }]);
+                        .and_modify(|v| v.push(Move { dst: def, src: *b }))
+                        .or_insert(vec![Move { dst: def, src: *b }]);
                 }
             }
         }

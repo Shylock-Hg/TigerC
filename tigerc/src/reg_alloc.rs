@@ -5,7 +5,7 @@ use crate::{
     flow::{self, FlowGraph},
     frame::Frame,
     graph::Entry,
-    liveness::{self, InterferenceGraph, ProgramPoint},
+    liveness::{self, InterferenceGraph, Move, ProgramPoint},
     stack::Stack,
     temp::Temp,
 };
@@ -16,26 +16,30 @@ struct Alloc<'a> {
     freeze_work_list: Vec<Temp>,
     spill_work_list: Vec<Temp>,
     spilled_nodes: HashSet<Temp>,
+    coalesced_nodes: HashSet<Temp>,
     colored_nodes: HashSet<Temp>,
     select_stack: Stack<Temp>,
-    coalesced_moves: Vec<ProgramPoint<'a>>, // moves that have been coalesced.
-    constrained_moves: Vec<ProgramPoint<'a>>, // moves whose source and target interfere.
+    coalesced_moves: Vec<Move>,          // moves that have been coalesced.
+    constrained_moves: Vec<Move>,        // moves whose source and target interfere.
     frozen_moves: Vec<ProgramPoint<'a>>, // moves that will no longer be considered for coalescing.
-    worklist_moves: Vec<ProgramPoint<'a>>, // moves enabled for possible coalescing.
-    active_moves: Vec<ProgramPoint<'a>>, // moves not yet ready for coalescing.
-    move_list: HashMap<Temp, Vec<ProgramPoint<'a>>>,
+    worklist_moves: Vec<Move>,           // moves enabled for possible coalescing.
+    active_moves: Vec<Move>,             // moves not yet ready for coalescing.
+    move_list: HashMap<Temp, Vec<Move>>,
+
+    alias: HashMap<Temp, Temp>,
 
     flow: FlowGraph<'a>,
     inter_g: InterferenceGraph,
     k: usize,
+    precolored: Vec<Temp>,
 }
 
 impl<'a> Alloc<'a> {
     pub fn new<F: Frame>(
         flow: FlowGraph<'a>,
         inter_g: InterferenceGraph,
-        work_list_moves: Vec<ProgramPoint<'a>>,
-        move_list: HashMap<Temp, Vec<ProgramPoint<'a>>>,
+        work_list_moves: Vec<Move>,
+        move_list: HashMap<Temp, Vec<Move>>,
     ) -> Self {
         let k = F::colors().len();
         let initial = inter_g
@@ -65,17 +69,20 @@ impl<'a> Alloc<'a> {
             freeze_work_list,
             spill_work_list,
             spilled_nodes: HashSet::new(),
+            coalesced_nodes: HashSet::new(),
             colored_nodes: HashSet::new(),
             select_stack: Stack::new(),
-            coalesced_moves: Vec::<ProgramPoint<'a>>::new(),
-            constrained_moves: Vec::<ProgramPoint<'a>>::new(),
+            coalesced_moves: Vec::<Move>::new(),
+            constrained_moves: Vec::<Move>::new(),
             frozen_moves: Vec::<ProgramPoint<'a>>::new(),
             worklist_moves: work_list_moves,
-            active_moves: Vec::<ProgramPoint<'a>>::new(),
+            active_moves: Vec::<Move>::new(),
+            alias: HashMap::new(),
             move_list,
             flow,
             inter_g,
             k,
+            precolored: F::precoloered(),
         }
     }
 }
@@ -109,14 +116,103 @@ impl<'a> Alloc<'a> {
         }
     }
 
+    pub fn coalesce(&mut self) {
+        let m = self.worklist_moves.pop();
+        if let Some(m) = m {
+            let Move { dst, src } = m;
+            let dst = self.get_alias(&dst);
+            let src = self.get_alias(&src);
+            let (u, v) = if self.precolored.contains(&src) {
+                (src, dst)
+            } else {
+                (dst, src)
+            };
+            if u == v {
+                self.coalesced_moves.push(m);
+                self.add_work_list(u);
+            } else if self.precolored.contains(&v) && self.inter_g.is_interfered(&u, &v) {
+                self.constrained_moves.push(m);
+                self.add_work_list(u);
+                self.add_work_list(v);
+            } else if (self.precolored.contains(&u) && self.george(&u, &v))
+                || (!self.precolored.contains(&u) && self.briggs(&u, &v))
+            {
+                self.coalesced_moves.push(m);
+                self.add_work_list(u);
+                self.combine(&u, &v);
+                self.add_work_list(u);
+            } else {
+                self.active_moves.push(m);
+            }
+        }
+    }
+
+    fn combine(&mut self, u: &Temp, v: &Temp) {
+        let res = self.freeze_work_list.iter().position(|t| t == v);
+        if let Some(i) = res {
+            self.freeze_work_list.remove(i);
+        } else {
+            self.spill_work_list.retain(|t| t != v);
+        }
+        self.coalesced_nodes.insert(*v);
+        self.alias.insert(*v, *u);
+        let res = self.move_list.remove(v).unwrap();
+        self.move_list.get_mut(u).unwrap().extend(res);
+        for t in self.inter_g.node_of_temp(v).outcome().to_owned() {
+            let t = self.inter_g.node(&t).value();
+            self.inter_g.add_interference(*u, *t);
+        }
+        self.inter_g.pop_node(v);
+        if self.is_significant(u) && self.freeze_work_list.contains(u) {
+            let res = self
+                .freeze_work_list
+                .remove(self.freeze_work_list.iter().position(|v| v == u).unwrap());
+            self.spill_work_list.push(res);
+        }
+    }
+
+    fn briggs(&self, u: &Temp, v: &Temp) -> bool {
+        let mut k = 0;
+        for n in self.inter_g.node_of_temp(u).outcome() {
+            if self.is_significant(self.inter_g.node(n).value()) {
+                k += 1;
+            }
+        }
+        for n in self.inter_g.node_of_temp(v).outcome() {
+            if self.is_significant(self.inter_g.node(n).value()) {
+                k += 1;
+            }
+        }
+        k < self.k
+    }
+
+    fn george(&self, u: &Temp, v: &Temp) -> bool {
+        self.inter_g.node_of_temp(v).outcome().iter().all(|t| {
+            let t = self.inter_g.node(t).value();
+            self.ok(t, u)
+        })
+    }
+
+    fn ok(&self, t: &Temp, r: &Temp) -> bool {
+        !self.is_significant(t) || self.precolored.contains(t) || self.inter_g.is_interfered(t, r)
+    }
+
+    fn add_work_list(&mut self, t: Temp) {
+        if !self.precolored.contains(&t) && !self.is_move_related(&t) && !self.is_significant(&t) {
+            let res = self.freeze_work_list.iter().position(|v| *v == t).unwrap();
+            self.simplify_work_list
+                .push(self.freeze_work_list.remove(res));
+        }
+    }
+
     fn to_temp(inter_g: &InterferenceGraph, e: &Entry) -> Temp {
         inter_g.node(e).value().to_owned()
     }
 
-    fn node_moves(&self, t: &Temp) -> Vec<ProgramPoint<'a>> {
+    fn node_moves(&self, t: &Temp) -> Vec<Move> {
         let wn = self.move_list.get(t).cloned().unwrap_or(vec![]);
         wn.into_iter()
-            .filter(|v| self.active_moves.contains(v) || self.worklist_moves.contains(v))
+            .filter(|v| self.active_moves.contains(v) || self.worklist_moves.contains(&v))
             .collect::<Vec<_>>()
     }
 
@@ -135,6 +231,14 @@ impl<'a> Alloc<'a> {
 
     fn is_move_related(&self, t: &Temp) -> bool {
         self.move_list.contains_key(t)
+    }
+
+    fn is_significant(&self, t: &Temp) -> bool {
+        self.inter_g.degree(t) >= self.k
+    }
+
+    fn get_alias(&self, t: &Temp) -> Temp {
+        self.coalesced_nodes.get(t).cloned().unwrap_or(*t)
     }
 }
 

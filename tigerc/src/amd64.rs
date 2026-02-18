@@ -240,6 +240,10 @@ impl Frame for FrameAmd64 {
         Self::rax()
     }
 
+    fn precoloered() -> Vec<Temp> {
+        vec![Self::rbp(), Self::rsp()]
+    }
+
     fn colors() -> Vec<Temp> {
         vec![
             //Self::rbp(),

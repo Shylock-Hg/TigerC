@@ -29,6 +29,7 @@ pub trait Frame {
     fn sp() -> Temp;
     fn return_value() -> Temp;
     fn word_size() -> i64;
+    fn precoloered() -> Vec<Temp>;
     fn colors() -> Vec<Temp>;
 
     fn name(&self) -> &Label;
