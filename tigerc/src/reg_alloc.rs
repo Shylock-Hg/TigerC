@@ -48,9 +48,7 @@ impl<'a> Alloc<'a> {
         for n in initial {
             if inter_g.degree(&n) >= k {
                 spill_work_list.push(*n);
-            } else if move_list.contains_key(&n)
-            // TODO speed up this liner find?
-            {
+            } else if move_list.contains_key(&n) {
                 freeze_work_list.push(*n);
             } else {
                 simplify_work_list.push(*n);
