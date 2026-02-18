@@ -65,9 +65,9 @@ impl InterferenceGraph {
     //        self.m_list.push(mv)
     //    }
 
-    pub fn neighbor_mut(&mut self, t: &Temp) -> &mut Neighbor {
-        self.g.get_mut(t).unwrap()
-    }
+    //pub fn neighbor_mut(&mut self, t: &Temp) -> &mut Neighbor {
+    //self.g.get_mut(t).unwrap()
+    //}
 
     pub fn degree(&self, t: &Temp) -> usize {
         let node = self.g.get(t).unwrap();
