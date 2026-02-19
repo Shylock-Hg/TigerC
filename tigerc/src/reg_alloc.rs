@@ -85,18 +85,9 @@ impl<'a> Alloc<'a> {
         if let Some(n) = n {
             self.select_stack.push(n);
             let adjs = self.adjacent(&n);
+            self.inter_g.pop_node(&n);
             for adj in adjs {
-                if self.inter_g.degree(&adj) == self.k - 1 {
-                    let mut nodes = self.adjacent(&adj);
-                    nodes.push(adj);
-                    self.enable_moves(nodes);
-                    self.spill_work_list.retain(|v| *v != adj);
-                    if self.move_related(&adj) {
-                        self.freeze_work_list.push(adj);
-                    } else {
-                        self.simplify_work_list.push(adj);
-                    }
-                }
+                self.on_decrement_degree(&adj);
             }
         }
     }
@@ -140,6 +131,20 @@ impl<'a> Alloc<'a> {
         }
     }
 
+    fn on_decrement_degree(&mut self, u: &Temp) {
+        if self.inter_g.degree(&u) == self.k - 1 {
+            let mut nodes = self.adjacent(u);
+            nodes.push(*u);
+            self.enable_moves(nodes);
+            self.spill_work_list.retain(|v| *v != *u);
+            if self.move_related(&u) {
+                self.freeze_work_list.push(*u);
+            } else {
+                self.simplify_work_list.push(*u);
+            }
+        }
+    }
+
     fn freeze_moves(&mut self, u: &Temp) {
         let moves = self.node_moves(u);
         for m in moves {
@@ -177,10 +182,12 @@ impl<'a> Alloc<'a> {
         self.alias.insert(*v, *u);
         let res = self.move_list.remove(v).unwrap();
         self.move_list.get_mut(u).unwrap().extend(res);
-        for t in self.adjacent(v) {
-            self.inter_g.add_interference(*u, t);
-        }
+        let adjs = self.adjacent(v);
         self.inter_g.pop_node(v);
+        for t in adjs {
+            self.inter_g.add_interference(*u, t);
+            self.on_decrement_degree(&t);
+        }
         if self.is_significant(u) && self.freeze_work_list.contains(u) {
             let res = self
                 .freeze_work_list
