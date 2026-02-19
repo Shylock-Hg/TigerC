@@ -21,7 +21,7 @@ impl<T> Stack<T> {
 
     pub fn contains(&self, t: &T) -> bool
     where
-        T: Eq,
+        T: PartialEq,
     {
         self.list.contains(t)
     }
