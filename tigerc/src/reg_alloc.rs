@@ -18,11 +18,11 @@ struct Alloc<'a> {
     coalesced_nodes: HashSet<Temp>,
     colored_nodes: HashSet<Temp>,
     select_stack: Stack<Temp>,
-    coalesced_moves: Vec<Move>,          // moves that have been coalesced.
-    constrained_moves: Vec<Move>,        // moves whose source and target interfere.
-    frozen_moves: Vec<ProgramPoint<'a>>, // moves that will no longer be considered for coalescing.
-    worklist_moves: Vec<Move>,           // moves enabled for possible coalescing.
-    active_moves: Vec<Move>,             // moves not yet ready for coalescing.
+    coalesced_moves: Vec<Move>,   // moves that have been coalesced.
+    constrained_moves: Vec<Move>, // moves whose source and target interfere.
+    frozen_moves: Vec<Move>,      // moves that will no longer be considered for coalescing.
+    worklist_moves: Vec<Move>,    // moves enabled for possible coalescing.
+    active_moves: Vec<Move>,      // moves not yet ready for coalescing.
     move_list: HashMap<Temp, Vec<Move>>,
 
     alias: HashMap<Temp, Temp>,
@@ -66,7 +66,7 @@ impl<'a> Alloc<'a> {
             select_stack: Stack::new(),
             coalesced_moves: Vec::<Move>::new(),
             constrained_moves: Vec::<Move>::new(),
-            frozen_moves: Vec::<ProgramPoint<'a>>::new(),
+            frozen_moves: Vec::<Move>::new(),
             worklist_moves: work_list_moves,
             active_moves: Vec::<Move>::new(),
             alias: HashMap::new(),
@@ -129,6 +129,40 @@ impl<'a> Alloc<'a> {
                 self.add_work_list(u);
             } else {
                 self.active_moves.push(m);
+            }
+        }
+    }
+
+    fn freeze(&mut self) {
+        let u = self.freeze_work_list.pop();
+        if let Some(u) = u {
+            self.simplify_work_list.push(u.clone());
+            self.freeze_moves(&u);
+        }
+    }
+
+    fn freeze_moves(&mut self, u: &Temp) {
+        let moves = self.node_moves(u);
+        for m in moves {
+            let Move { dst, src } = m;
+            let v = if self.get_alias(&src) == self.get_alias(u) {
+                self.get_alias(&dst)
+            } else {
+                self.get_alias(&src)
+            };
+            self.frozen_moves.push(
+                self.active_moves
+                    .remove(self.active_moves.iter().position(|val| val == &m).unwrap()),
+            );
+            if self.node_moves(&v).is_empty() && !self.is_significant(&v) {
+                self.simplify_work_list.push(
+                    self.freeze_work_list.remove(
+                        self.freeze_work_list
+                            .iter()
+                            .position(|val| val == &v)
+                            .unwrap(),
+                    ),
+                )
             }
         }
     }
@@ -208,7 +242,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn is_move_related(&self, t: &Temp) -> bool {
-        self.move_list.contains_key(t)
+        !self.node_moves(t).is_empty()
     }
 
     fn is_significant(&self, t: &Temp) -> bool {
