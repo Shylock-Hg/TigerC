@@ -92,7 +92,7 @@ impl<'a> Alloc<'a> {
                     nodes.push(outcome);
                     self.enable_moves(nodes);
                     self.spill_work_list.retain(|v| *v != outcome);
-                    if self.is_move_related(&outcome) {
+                    if self.move_related(&outcome) {
                         self.freeze_work_list.push(outcome);
                     } else {
                         self.simplify_work_list.push(outcome);
@@ -214,7 +214,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn add_work_list(&mut self, t: Temp) {
-        if !self.precolored.contains(&t) && !self.is_move_related(&t) && !self.is_significant(&t) {
+        if !self.precolored.contains(&t) && !self.move_related(&t) && !self.is_significant(&t) {
             let res = self.freeze_work_list.iter().position(|v| *v == t).unwrap();
             self.simplify_work_list
                 .push(self.freeze_work_list.remove(res));
@@ -241,7 +241,7 @@ impl<'a> Alloc<'a> {
         }
     }
 
-    fn is_move_related(&self, t: &Temp) -> bool {
+    fn move_related(&self, t: &Temp) -> bool {
         !self.node_moves(t).is_empty()
     }
 
