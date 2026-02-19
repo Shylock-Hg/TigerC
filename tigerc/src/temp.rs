@@ -5,7 +5,7 @@ use crate::ir::LowerIdent;
 
 // for variable
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Temp(pub LowerIdent);
+pub struct Temp(LowerIdent);
 
 impl Temp {
     pub fn new() -> Self {
@@ -25,7 +25,7 @@ impl ToString for Temp {
 
 // for function or code block location
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Label(pub LowerIdent);
+pub struct Label(LowerIdent);
 
 impl Label {
     pub fn new() -> Self {
