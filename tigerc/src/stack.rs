@@ -18,4 +18,11 @@ impl<T> Stack<T> {
     pub fn pop(&mut self) -> Option<T> {
         self.list.pop_back()
     }
+
+    pub fn contains(&self, t: &T) -> bool
+    where
+        T: Eq,
+    {
+        self.list.contains(t)
+    }
 }

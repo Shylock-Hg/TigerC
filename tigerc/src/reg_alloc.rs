@@ -84,18 +84,17 @@ impl<'a> Alloc<'a> {
         let n = self.simplify_work_list.pop();
         if let Some(n) = n {
             self.select_stack.push(n);
-            let node = self.inter_g.pop_node(&n);
-            for outcome in node.outcome {
-                if self.inter_g.degree(&outcome) == self.k - 1 {
-                    let m = self.inter_g.node(&outcome);
-                    let mut nodes = m.outcome.clone();
-                    nodes.push(outcome);
+            let adjs = self.adjacent(&n);
+            for adj in adjs {
+                if self.inter_g.degree(&adj) == self.k - 1 {
+                    let mut nodes = self.adjacent(&adj);
+                    nodes.push(adj);
                     self.enable_moves(nodes);
-                    self.spill_work_list.retain(|v| *v != outcome);
-                    if self.move_related(&outcome) {
-                        self.freeze_work_list.push(outcome);
+                    self.spill_work_list.retain(|v| *v != adj);
+                    if self.move_related(&adj) {
+                        self.freeze_work_list.push(adj);
                     } else {
-                        self.simplify_work_list.push(outcome);
+                        self.simplify_work_list.push(adj);
                     }
                 }
             }
@@ -178,7 +177,7 @@ impl<'a> Alloc<'a> {
         self.alias.insert(*v, *u);
         let res = self.move_list.remove(v).unwrap();
         self.move_list.get_mut(u).unwrap().extend(res);
-        for t in self.inter_g.node(v).outcome.to_owned() {
+        for t in self.adjacent(v) {
             self.inter_g.add_interference(*u, t);
         }
         self.inter_g.pop_node(v);
@@ -192,13 +191,13 @@ impl<'a> Alloc<'a> {
 
     fn briggs(&self, u: &Temp, v: &Temp) -> bool {
         let mut k = 0;
-        for n in &self.inter_g.node(u).outcome {
-            if self.is_significant(n) {
+        for n in self.adjacent(u) {
+            if self.is_significant(&n) {
                 k += 1;
             }
         }
-        for n in &self.inter_g.node(v).outcome {
-            if self.is_significant(n) {
+        for n in self.adjacent(v) {
+            if self.is_significant(&n) {
                 k += 1;
             }
         }
@@ -206,7 +205,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn george(&self, u: &Temp, v: &Temp) -> bool {
-        self.inter_g.node(v).outcome.iter().all(|t| self.ok(t, u))
+        self.adjacent(v).iter().all(|t| self.ok(t, u))
     }
 
     fn ok(&self, t: &Temp, r: &Temp) -> bool {
@@ -251,6 +250,16 @@ impl<'a> Alloc<'a> {
 
     fn get_alias(&self, t: &Temp) -> Temp {
         self.coalesced_nodes.get(t).cloned().unwrap_or(*t)
+    }
+
+    fn adjacent(&self, t: &Temp) -> Vec<Temp> {
+        self.inter_g
+            .node(t)
+            .outcome
+            .clone()
+            .into_iter()
+            .filter(|v| !self.select_stack.contains(v) && !self.coalesced_nodes.contains(v))
+            .collect()
     }
 }
 
