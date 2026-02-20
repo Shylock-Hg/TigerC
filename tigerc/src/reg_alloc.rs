@@ -23,14 +23,39 @@ struct Alloc<'a> {
     frozen_moves: Vec<Move>,      // moves that will no longer be considered for coalescing.
     worklist_moves: Vec<Move>,    // moves enabled for possible coalescing.
     active_moves: Vec<Move>,      // moves not yet ready for coalescing.
-    move_list: HashMap<Temp, Vec<Move>>,
 
+    adj_set: HashSet<(Temp, Temp)>,
+    adj_list: HashMap<Temp, Vec<Temp>>,
+    degree: HashMap<Temp, usize>,
+    move_list: HashMap<Temp, Vec<Move>>,
     alias: HashMap<Temp, Temp>,
+    color: HashMap<Temp, Temp>,
 
     flow: FlowGraph<'a>,
-    inter_g: InterferenceGraph,
     k: usize,
     precolored: Vec<Temp>,
+}
+
+fn adj_set_of_inter_graph(inter_g: &InterferenceGraph) -> HashSet<(Temp, Temp)> {
+    let mut res = HashSet::new();
+    inter_g.iter().for_each(|(t, n)| {
+        n.outcome.iter().for_each(|v| {
+            res.insert((*t, *v));
+            res.insert((*v, *t));
+        });
+    });
+    res
+}
+
+fn adj_list_of_inter_graph(inter_g: &InterferenceGraph) -> HashMap<Temp, Vec<Temp>> {
+    inter_g
+        .iter()
+        .map(|(t, n)| (*t, n.outcome.clone()))
+        .collect()
+}
+
+fn degree_of_inter_graph(inter_g: &InterferenceGraph) -> HashMap<Temp, usize> {
+    inter_g.iter().map(|(t, n)| (*t, n.outcome.len())).collect()
 }
 
 impl<'a> Alloc<'a> {
@@ -69,10 +94,14 @@ impl<'a> Alloc<'a> {
             frozen_moves: Vec::<Move>::new(),
             worklist_moves: work_list_moves,
             active_moves: Vec::<Move>::new(),
+            adj_set: adj_set_of_inter_graph(&inter_g),
+            adj_list: adj_list_of_inter_graph(&inter_g),
+            color: HashMap::new(),
+            degree: degree_of_inter_graph(&inter_g),
+
             alias: HashMap::new(),
             move_list,
             flow,
-            inter_g,
             k,
             precolored: F::precoloered(),
         }
@@ -80,14 +109,33 @@ impl<'a> Alloc<'a> {
 }
 
 impl<'a> Alloc<'a> {
+    pub fn alloc(&mut self) {
+        while !self.simplify_work_list.is_empty()
+            || !self.freeze_work_list.is_empty()
+            || !self.spill_work_list.is_empty()
+            || !self.worklist_moves.is_empty()
+        {
+            if !self.simplify_work_list.is_empty() {
+                self.simplify();
+            } else if !self.worklist_moves.is_empty() {
+                self.coalesce();
+            } else if !self.freeze_work_list.is_empty() {
+                self.freeze();
+            } else if !self.spill_work_list.is_empty() {
+                self.select_spill();
+            }
+        }
+    }
+
+    fn assign_colors(&mut self) {}
+
     pub fn simplify(&mut self) {
         let n = self.simplify_work_list.pop();
         if let Some(n) = n {
             self.select_stack.push(n);
             let adjs = self.adjacent(&n);
-            self.inter_g.pop_node(&n);
             for adj in adjs {
-                self.on_decrement_degree(&adj);
+                self.decrement_degree(&adj);
             }
         }
     }
@@ -106,7 +154,7 @@ impl<'a> Alloc<'a> {
             if u == v {
                 self.coalesced_moves.push(m);
                 self.add_work_list(u);
-            } else if self.precolored.contains(&v) && self.inter_g.is_interfered(&u, &v) {
+            } else if self.precolored.contains(&v) && self.adj_set.contains(&(u, v)) {
                 self.constrained_moves.push(m);
                 self.add_work_list(u);
                 self.add_work_list(v);
@@ -154,11 +202,14 @@ impl<'a> Alloc<'a> {
 
     // spill temp with higher cost first
     fn spill_cost(&self, t: &Temp) -> f32 {
-        self.inter_g.degree(t) as f32
+        self.degree[t] as f32
     }
 
-    fn on_decrement_degree(&mut self, u: &Temp) {
-        if self.inter_g.degree(&u) == self.k - 1 {
+    fn decrement_degree(&mut self, u: &Temp) {
+        let dr = self.degree.get_mut(u).unwrap();
+        let d = *dr;
+        *dr -= 1;
+        if d == self.k {
             let mut nodes = self.adjacent(u);
             nodes.push(*u);
             self.enable_moves(nodes);
@@ -209,10 +260,9 @@ impl<'a> Alloc<'a> {
         let res = self.move_list.remove(v).unwrap();
         self.move_list.get_mut(u).unwrap().extend(res);
         let adjs = self.adjacent(v);
-        self.inter_g.pop_node(v);
         for t in adjs {
-            self.inter_g.add_interference(*u, t);
-            self.on_decrement_degree(&t);
+            self.add_edge(u, &t);
+            self.decrement_degree(&t);
         }
         if self.is_significant(u) && self.freeze_work_list.contains(u) {
             let res = self
@@ -242,7 +292,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn ok(&self, t: &Temp, r: &Temp) -> bool {
-        !self.is_significant(t) || self.precolored.contains(t) || self.inter_g.is_interfered(t, r)
+        !self.is_significant(t) || self.precolored.contains(t) || self.adj_set.contains(&(*t, *r))
     }
 
     fn add_work_list(&mut self, t: Temp) {
@@ -278,7 +328,7 @@ impl<'a> Alloc<'a> {
     }
 
     fn is_significant(&self, t: &Temp) -> bool {
-        self.inter_g.degree(t) >= self.k
+        self.degree[t] >= self.k
     }
 
     fn get_alias(&self, t: &Temp) -> Temp {
@@ -286,13 +336,26 @@ impl<'a> Alloc<'a> {
     }
 
     fn adjacent(&self, t: &Temp) -> Vec<Temp> {
-        self.inter_g
-            .node(t)
-            .outcome
+        self.adj_list[t]
             .clone()
             .into_iter()
             .filter(|v| !self.select_stack.contains(v) && !self.coalesced_nodes.contains(v))
             .collect()
+    }
+
+    fn add_edge(&mut self, a: &Temp, b: &Temp) {
+        if !self.adj_set.contains(&(*a, *b)) && a != b {
+            self.adj_set.insert((*a, *b));
+            self.adj_set.insert((*b, *a));
+            if !self.precolored.contains(a) {
+                *self.degree.get_mut(a).unwrap() += 1;
+                self.adj_list.get_mut(a).unwrap().push(*b);
+            }
+            if !self.precolored.contains(b) {
+                *self.degree.get_mut(b).unwrap() += 1;
+                self.adj_list.get_mut(b).unwrap().push(*a);
+            }
+        };
     }
 }
 

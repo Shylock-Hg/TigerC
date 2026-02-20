@@ -41,10 +41,12 @@ pub struct LiveInterval<'a> {
     pub interval: Vec<ProgramPoint<'a>>,
 }
 
+#[derive(Clone)]
 pub struct Neighbor {
     pub outcome: Vec<Temp>,
 }
 
+#[derive(Clone)]
 pub struct InterferenceGraph {
     pub g: HashMap<Temp, Neighbor>,
 }
