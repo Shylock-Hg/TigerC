@@ -131,6 +131,32 @@ impl<'a> Alloc<'a> {
         }
     }
 
+    fn select_spill(&mut self) {
+        let candidates = self
+            .spill_work_list
+            .iter()
+            .filter(|v| !self.spilled_nodes.contains(v));
+        let spill = candidates
+            .max_by(|a, b| self.spill_cost(a).partial_cmp(&self.spill_cost(b)).unwrap())
+            .cloned();
+        if let Some(spill) = spill {
+            self.simplify_work_list.push(
+                self.spill_work_list.remove(
+                    self.spill_work_list
+                        .iter()
+                        .position(|v| v == &spill)
+                        .unwrap(),
+                ),
+            );
+            self.freeze_moves(&spill);
+        }
+    }
+
+    // spill temp with higher cost first
+    fn spill_cost(&self, t: &Temp) -> f32 {
+        self.inter_g.degree(t) as f32
+    }
+
     fn on_decrement_degree(&mut self, u: &Temp) {
         if self.inter_g.degree(&u) == self.k - 1 {
             let mut nodes = self.adjacent(u);
