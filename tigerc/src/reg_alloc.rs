@@ -29,11 +29,12 @@ struct Alloc<'a> {
     degree: HashMap<Temp, usize>,
     move_list: HashMap<Temp, Vec<Move>>,
     alias: HashMap<Temp, Temp>,
-    color: HashMap<Temp, Temp>,
+    color: HashMap<Temp, Temp>, // The result of register assignment
 
     flow: FlowGraph<'a>,
     k: usize,
     precolored: Vec<Temp>,
+    colors: Vec<Temp>,
 }
 
 fn adj_set_of_inter_graph(inter_g: &InterferenceGraph) -> HashSet<(Temp, Temp)> {
@@ -104,6 +105,7 @@ impl<'a> Alloc<'a> {
             flow,
             k,
             precolored: F::precoloered(),
+            colors: F::colors(),
         }
     }
 }
@@ -125,9 +127,29 @@ impl<'a> Alloc<'a> {
                 self.select_spill();
             }
         }
+        self.assign_colors();
     }
 
-    fn assign_colors(&mut self) {}
+    fn assign_colors(&mut self) {
+        while let Some(n) = self.select_stack.pop() {
+            let mut colors = self.colors.clone();
+            for adj in &self.adj_list[&n] {
+                let adj = self.get_alias(adj);
+                if self.colored_nodes.contains(&adj) && self.precolored.contains(&adj) {
+                    colors.retain(|v| *v != self.color[&adj]);
+                }
+            }
+            if colors.is_empty() {
+                self.spilled_nodes.insert(n);
+            } else {
+                self.colored_nodes.insert(n);
+                self.color.insert(n, colors.pop().unwrap());
+            }
+        }
+        for n in &self.coalesced_nodes {
+            self.color.insert(*n, self.color[&self.get_alias(&n)]);
+        }
+    }
 
     pub fn simplify(&mut self) {
         let n = self.simplify_work_list.pop();
