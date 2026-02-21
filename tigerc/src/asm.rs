@@ -1,6 +1,6 @@
 use crate::temp::{Label, Temp};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     Operation {
         assembly: String,
@@ -55,6 +55,22 @@ impl Instruction {
         }
     }
 
+    pub fn def_mut(&mut self) -> Option<&mut Vec<Temp>> {
+        match self {
+            Instruction::Operation { destination, .. } => Some(destination),
+            Instruction::Label { .. } => None,
+            Instruction::Move { destination, .. } => Some(destination),
+        }
+    }
+
+    pub fn set_dest(&mut self, dest: Vec<Temp>) {
+        match self {
+            Instruction::Operation { destination, .. } => *destination = dest,
+            Instruction::Label { .. } => (),
+            Instruction::Move { destination, .. } => *destination = dest,
+        }
+    }
+
     pub fn use_(&self) -> Vec<Temp> {
         match &self {
             Instruction::Operation { source, .. } => source.clone(),
@@ -63,12 +79,28 @@ impl Instruction {
         }
     }
 
+    pub fn use_mut(&mut self) -> Option<&mut Vec<Temp>> {
+        match self {
+            Instruction::Operation { source, .. } => Some(source),
+            Instruction::Label { .. } => None,
+            Instruction::Move { source, .. } => Some(source),
+        }
+    }
+
+    pub fn set_source(&mut self, s: Vec<Temp>) {
+        match self {
+            Instruction::Operation { source, .. } => *source = s,
+            Instruction::Label { .. } => (),
+            Instruction::Move { source, .. } => *source = s,
+        }
+    }
+
     pub fn is_move(&self) -> bool {
         matches!(&self, Instruction::Move { .. })
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     pub instructions: Vec<Instruction>,
 }
@@ -90,6 +122,7 @@ impl Block {
     }
 }
 
+#[derive(Clone)]
 pub struct Trace {
     pub blocks: Vec<Block>,
     pub done_label: Label,

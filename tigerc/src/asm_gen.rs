@@ -1,6 +1,7 @@
 use std::vec::Vec;
 
 use crate::asm;
+use crate::asm::Instruction;
 use crate::canon;
 use crate::frame::Frame;
 use crate::ir;
@@ -23,6 +24,10 @@ impl<F: Frame> Gen<F> {
 
     pub fn result(self) -> asm::Trace {
         self.trace
+    }
+
+    pub fn raw_result(self) -> Vec<Instruction> {
+        self.insts
     }
 
     pub fn munch_trace(&mut self, trace: canon::Trace) {
@@ -135,7 +140,7 @@ impl<F: Frame> Gen<F> {
         }
     }
 
-    fn munch_expression(&mut self, e: ir::Exp) -> Temp {
+    pub fn munch_expression(&mut self, e: ir::Exp) -> Temp {
         let temp = Temp::new();
         match e {
             ir::Exp::Const(i) => {
@@ -236,7 +241,12 @@ impl<F: Frame> Gen<F> {
         temp
     }
 
-    fn emit(&mut self, i: asm::Instruction) {
+    pub fn emit(&mut self, i: asm::Instruction) -> usize {
         self.insts.push(i);
+        self.insts.len() - 1
+    }
+
+    pub fn get_mut(&mut self, i: usize) -> &mut asm::Instruction {
+        self.insts.get_mut(i).unwrap()
     }
 }

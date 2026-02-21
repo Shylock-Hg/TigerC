@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::asm;
+use crate::asm::{self, Instruction};
 use crate::ident_pool::Symbol;
 use crate::ir;
 use crate::temp::{Label, Temp};
@@ -20,6 +20,15 @@ pub struct Register(pub Symbol);
 #[derive(Clone)]
 pub struct Variable {
     pub access: Access,
+}
+
+impl Variable {
+    pub fn mem(&self) -> i64 {
+        match &self.access {
+            Access::Frame(i) => *i,
+            _ => unreachable!(),
+        }
+    }
 }
 
 pub trait Frame {

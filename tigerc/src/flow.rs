@@ -30,6 +30,10 @@ impl<'a> FlowGraph<'a> {
         self.graph.last_node()
     }
 
+    pub fn start_node(&self) -> &Node<&'a Block> {
+        self.graph.first_node()
+    }
+
     pub fn def(&self, block: &Entry, offset: usize) -> Vec<Temp> {
         let block = self.graph.node(&block);
         let inst = block.value().instructions.get(offset).unwrap();

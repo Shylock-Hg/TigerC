@@ -81,6 +81,10 @@ impl<T> Graph<T> {
         self.nodes.last_mut().unwrap()
     }
 
+    pub fn first_node(&self) -> &Node<T> {
+        self.nodes.first().unwrap()
+    }
+
     pub fn last_entry(&self) -> Entry {
         Entry(self.nodes.len() - 1)
     }

@@ -1,7 +1,9 @@
 use std::sync::Once;
+use std::time::Instant;
 
 use indexmap::IndexMap;
 
+use crate::asm::Instruction;
 use crate::frame::{Access, Frame, Variable};
 use crate::temp::{Label, Temp};
 use crate::{asm, ir};

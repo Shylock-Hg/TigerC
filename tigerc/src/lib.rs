@@ -80,7 +80,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             trace.transform_last(|v| asm::Block {
                 instructions: frame.borrow().proc_entry_exit2(v.instructions),
             });
-            let trace = reg_alloc::alloc::<FrameAmd64>(trace);
+            let trace = reg_alloc::alloc::<FrameAmd64>(trace, frame.clone());
         }
         canon::Fragment::StringLiteral(..) => (),
     });

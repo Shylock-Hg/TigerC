@@ -1,12 +1,18 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 use crate::{
-    asm,
+    asm::{self, Block},
+    asm_gen,
     flow::{self, FlowGraph},
-    frame::Frame,
+    frame::{self, Frame, Variable},
+    ir, ir_gen,
     liveness::{self, InterferenceGraph, Move, ProgramPoint},
     stack::Stack,
-    temp::Temp,
+    temp::{Label, Temp},
 };
 
 struct Alloc<'a> {
@@ -111,7 +117,11 @@ impl<'a> Alloc<'a> {
 }
 
 impl<'a> Alloc<'a> {
-    pub fn alloc(&mut self) {
+    pub fn alloc<F: Frame>(
+        &mut self,
+        frame: Rc<RefCell<F>>,
+        trace: asm::Trace,
+    ) -> (asm::Trace, bool) {
         while !self.simplify_work_list.is_empty()
             || !self.freeze_work_list.is_empty()
             || !self.spill_work_list.is_empty()
@@ -128,6 +138,82 @@ impl<'a> Alloc<'a> {
             }
         }
         self.assign_colors();
+        if !self.spilled_nodes.is_empty() {
+            let trace = self.rewrite_program(frame, trace);
+            (trace, true)
+        } else {
+            (trace, false)
+        }
+    }
+
+    fn rewrite_program<F: Frame>(
+        &mut self,
+        frame: Rc<RefCell<F>>,
+        trace: asm::Trace,
+    ) -> asm::Trace {
+        let temp_loc = self
+            .spilled_nodes
+            .iter()
+            .map(|v| {
+                let var = frame.borrow_mut().allocate_local(ir::Variable(true));
+                (*v, var)
+            })
+            .collect::<HashMap<_, _>>();
+
+        asm::Trace {
+            blocks: trace
+                .blocks
+                .into_iter()
+                .map(|block| self.rewrite_block(frame.clone(), block, &temp_loc))
+                .collect(),
+            done_label: trace.done_label,
+        }
+    }
+
+    fn rewrite_block<F: Frame>(
+        &self,
+        frame: Rc<RefCell<F>>,
+        block: asm::Block,
+        temp_loc: &HashMap<Temp, frame::Variable>,
+    ) -> asm::Block {
+        let mut gen = asm_gen::Gen::<F>::new(Label::new());
+        for mut inst in block.instructions {
+            let new_sources = inst
+                .use_()
+                .into_iter()
+                .map(|s| {
+                    if self.spilled_nodes.contains(&s) {
+                        let new_source = gen.munch_expression(ir_gen::access_var(
+                            &temp_loc[&s],
+                            ir::Exp::Temp(F::fp()),
+                        ));
+                        new_source
+                    } else {
+                        s
+                    }
+                })
+                .collect();
+            inst.set_source(new_sources);
+            let defs = inst.def();
+            let inst_index = gen.emit(inst);
+            let new_dests = defs
+                .into_iter()
+                .map(|d| {
+                    if self.spilled_nodes.contains(&d) {
+                        let new_dest = Temp::new();
+                        gen.munch_statement(ir::Statement::Move {
+                            dst: ir_gen::access_var(&temp_loc[&d], ir::Exp::Temp(F::fp())),
+                            val: ir::Exp::Temp(new_dest),
+                        });
+                        new_dest
+                    } else {
+                        d
+                    }
+                })
+                .collect();
+            gen.get_mut(inst_index).set_dest(new_dests);
+        }
+        asm::Block::new(gen.raw_result())
     }
 
     fn assign_colors(&mut self) {
@@ -381,10 +467,14 @@ impl<'a> Alloc<'a> {
     }
 }
 
-pub fn alloc<F: Frame>(trace: asm::Trace) -> asm::Trace {
+pub fn alloc<F: Frame>(trace: asm::Trace, frame: Rc<RefCell<F>>) -> asm::Trace {
     let flow = flow::flow_analyze(&trace);
     let (inter_g, work_list_move, work_list) = liveness::liveness_analyze(&flow, trace.done_label);
-    let alloc = Alloc::new::<F>(flow, inter_g, work_list_move, work_list);
-    // TODO return the rewritten trace
-    trace
+    let mut allocator = Alloc::new::<F>(flow, inter_g, work_list_move, work_list);
+    let (trace, continue_) = allocator.alloc(frame.clone(), trace.clone());
+    if continue_ {
+        alloc(trace, frame.clone())
+    } else {
+        trace
+    }
 }
