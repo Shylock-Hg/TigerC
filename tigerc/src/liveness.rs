@@ -99,7 +99,7 @@ impl InterferenceGraph {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Move {
     pub dst: Temp,
     pub src: Temp,
@@ -153,16 +153,18 @@ fn build_iterference_graph<'a>(
                 if !(inst.is_move() && use_.contains(b)) && def != *b {
                     iter_g.add_interference(def, *b);
                 }
+            }
+            for u in use_.iter() {
                 if inst.is_move() {
-                    work_list_moves.push(Move { dst: def, src: *b });
+                    work_list_moves.push(Move { dst: def, src: *u });
                     move_list
                         .entry(def)
-                        .and_modify(|v| v.push(Move { dst: def, src: *b }))
-                        .or_insert(vec![Move { dst: def, src: *b }]);
+                        .and_modify(|v| v.push(Move { dst: def, src: *u }))
+                        .or_insert(vec![Move { dst: def, src: *u }]);
                     move_list
-                        .entry(*b)
-                        .and_modify(|v| v.push(Move { dst: def, src: *b }))
-                        .or_insert(vec![Move { dst: def, src: *b }]);
+                        .entry(*u)
+                        .and_modify(|v| v.push(Move { dst: def, src: *u }))
+                        .or_insert(vec![Move { dst: def, src: *u }]);
                 }
             }
         }

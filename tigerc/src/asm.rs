@@ -122,7 +122,7 @@ impl Block {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Trace {
     pub blocks: Vec<Block>,
     pub done_label: Label,

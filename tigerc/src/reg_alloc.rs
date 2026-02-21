@@ -103,14 +103,14 @@ impl<'a> Alloc<'a> {
             active_moves: Vec::<Move>::new(),
             adj_set: adj_set_of_inter_graph(&inter_g),
             adj_list: adj_list_of_inter_graph(&inter_g),
-            color: HashMap::new(),
+            color: F::precolored().into_iter().map(|v| (v, v)).collect(),
             degree: degree_of_inter_graph(&inter_g),
 
             alias: HashMap::new(),
             move_list,
             flow,
             k,
-            precolored: F::precoloered(),
+            precolored: F::precolored(),
             colors: F::colors(),
         }
     }
@@ -221,7 +221,7 @@ impl<'a> Alloc<'a> {
             let mut colors = self.colors.clone();
             for adj in &self.adj_list[&n] {
                 let adj = self.get_alias(adj);
-                if self.colored_nodes.contains(&adj) && self.precolored.contains(&adj) {
+                if self.colored_nodes.contains(&adj) || self.precolored.contains(&adj) {
                     colors.retain(|v| *v != self.color[&adj]);
                 }
             }
