@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::asm::{self, Instruction};
+use crate::asm;
 use crate::ident_pool::Symbol;
 use crate::ir;
 use crate::temp::{Label, Temp};

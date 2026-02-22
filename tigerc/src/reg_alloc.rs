@@ -6,12 +6,11 @@ use std::{
 };
 
 use crate::{
-    asm::{self, Block},
-    asm_gen,
+    asm, asm_gen,
     flow::{self, FlowGraph},
-    frame::{self, Frame, Variable},
+    frame::{self, Frame},
     ir, ir_gen,
-    liveness::{self, InterferenceGraph, Move, ProgramPoint},
+    liveness::{self, InterferenceGraph, Move},
     stack::Stack,
     temp::{Label, Temp},
 };
@@ -165,7 +164,7 @@ impl<'a> Alloc<'a> {
             blocks: trace
                 .blocks
                 .into_iter()
-                .map(|block| self.rewrite_block(frame.clone(), block, &temp_loc))
+                .map(|block| self.rewrite_block::<F>(block, &temp_loc))
                 .collect(),
             done_label: trace.done_label,
         }
@@ -173,7 +172,6 @@ impl<'a> Alloc<'a> {
 
     fn rewrite_block<F: Frame>(
         &self,
-        frame: Rc<RefCell<F>>,
         block: asm::Block,
         temp_loc: &HashMap<Temp, frame::Variable>,
     ) -> asm::Block {
