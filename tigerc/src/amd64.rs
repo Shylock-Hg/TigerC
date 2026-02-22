@@ -30,22 +30,22 @@ static ONCE: Once = Once::new();
 
 fn initialize() {
     unsafe {
-        RBP = Some(Temp::new());
-        RSP = Some(Temp::new());
-        RAX = Some(Temp::new());
-        RBX = Some(Temp::new());
-        RCX = Some(Temp::new());
-        RDX = Some(Temp::new());
-        RDI = Some(Temp::new());
-        RSI = Some(Temp::new());
-        R8 = Some(Temp::new());
-        R9 = Some(Temp::new());
-        R10 = Some(Temp::new());
-        R11 = Some(Temp::new());
-        R12 = Some(Temp::new());
-        R13 = Some(Temp::new());
-        R14 = Some(Temp::new());
-        R15 = Some(Temp::new());
+        RBP = Some(Temp::new_named(ident_pool::symbol("rbp")));
+        RSP = Some(Temp::new_named(ident_pool::symbol("rsp")));
+        RAX = Some(Temp::new_named(ident_pool::symbol("rax")));
+        RBX = Some(Temp::new_named(ident_pool::symbol("rbx")));
+        RCX = Some(Temp::new_named(ident_pool::symbol("rcx")));
+        RDX = Some(Temp::new_named(ident_pool::symbol("rdx")));
+        RDI = Some(Temp::new_named(ident_pool::symbol("rdi")));
+        RSI = Some(Temp::new_named(ident_pool::symbol("rsi")));
+        R8 = Some(Temp::new_named(ident_pool::symbol("r8")));
+        R9 = Some(Temp::new_named(ident_pool::symbol("r9")));
+        R10 = Some(Temp::new_named(ident_pool::symbol("r10")));
+        R11 = Some(Temp::new_named(ident_pool::symbol("r11")));
+        R12 = Some(Temp::new_named(ident_pool::symbol("r12")));
+        R13 = Some(Temp::new_named(ident_pool::symbol("r13")));
+        R14 = Some(Temp::new_named(ident_pool::symbol("r14")));
+        R15 = Some(Temp::new_named(ident_pool::symbol("r15")));
     }
 }
 
