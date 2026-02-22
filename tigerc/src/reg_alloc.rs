@@ -439,7 +439,11 @@ impl<'a> Alloc<'a> {
     }
 
     fn get_alias(&self, t: &Temp) -> Temp {
-        self.coalesced_nodes.get(t).cloned().unwrap_or(*t)
+        if self.coalesced_nodes.contains(t) {
+            self.get_alias(&self.alias[t])
+        } else {
+            *t
+        }
     }
 
     fn adjacent(&self, t: &Temp) -> Vec<Temp> {
