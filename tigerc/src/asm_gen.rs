@@ -83,14 +83,16 @@ impl<F: Frame> Gen<F> {
             ir::Statement::Exp(e) => {
                 self.munch_expression(e);
             }
-            ir::Statement::Jump { exp, labels } => {
-                assert!(matches!(exp, ir::Exp::Name(_)));
-                let exp = self.munch_expression(exp);
+            ir::Statement::Jump { exp, .. } => {
+                let l = match exp {
+                    ir::Exp::Name(l) => l,
+                    _ => unreachable!(),
+                };
                 let inst = asm::Instruction::Operation {
-                    assembly: "jmp `s0".to_string(),
+                    assembly: format!("jmp {}", l),
                     destination: vec![],
-                    source: vec![exp],
-                    jump: Some(labels),
+                    source: vec![],
+                    jump: Some(vec![l]),
                 };
                 self.emit(inst);
             }
