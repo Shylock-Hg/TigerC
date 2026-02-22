@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::temp::{Label, Temp};
 
 #[derive(Debug, Clone)]
@@ -150,6 +152,17 @@ impl Trace {
     {
         let val = self.blocks.pop().unwrap();
         self.blocks.push(f(val))
+    }
+}
+
+impl Display for Trace {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for b in &self.blocks {
+            for i in &b.instructions {
+                writeln!(f, "{}", i.instance())?;
+            }
+        }
+        Ok(())
     }
 }
 

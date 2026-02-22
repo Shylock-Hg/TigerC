@@ -54,7 +54,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
                 }
             }
             Fragment::StringLiteral(label, val) => {
-                println!("StringFragment");
+                // println!("StringFragment");
                 canon::Fragment::StringLiteral(label, val)
             }
         })

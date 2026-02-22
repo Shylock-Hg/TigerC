@@ -69,6 +69,7 @@ struct VarEntry<F> {
     var: frame::Variable,
 }
 
+#[derive(Debug)]
 pub enum Fragment<F: Frame> {
     Function {
         label: Label,

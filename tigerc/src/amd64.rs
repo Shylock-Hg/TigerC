@@ -53,6 +53,7 @@ fn initialize() {
 const WORD_SIZE: i64 = 8;
 
 // frame of a function
+#[derive(Debug)]
 pub struct FrameAmd64 {
     // function name
     name: Label,

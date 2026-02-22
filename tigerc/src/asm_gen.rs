@@ -178,21 +178,20 @@ impl<F: Frame> Gen<F> {
                 unreachable!();
             }
             ir::Exp::Call { func, args } => {
-                let function_temp = self.munch_expression(*func);
+                let func_label = match *func {
+                    ir::Exp::Name(l) => l,
+                    _ => todo!(), // TODO need this?
+                };
                 let argument_temps = args
                     .into_iter()
                     .map(|arg| self.munch_expression(arg))
                     .collect::<Vec<_>>();
                 // call function_temp
                 let inst = asm::Instruction::Operation {
-                    assembly: "call `s0".to_string(),
+                    assembly: format!("call {}", func_label),
                     // need return/arguments for live analysis
                     destination: vec![F::return_value()],
-                    source: {
-                        let mut v = vec![function_temp];
-                        v.extend(argument_temps);
-                        v
-                    },
+                    source: argument_temps,
                     jump: None,
                 };
                 self.emit(inst);

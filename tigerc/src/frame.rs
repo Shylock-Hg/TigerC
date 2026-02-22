@@ -5,7 +5,7 @@ use crate::ident_pool::Symbol;
 use crate::ir;
 use crate::temp::{Label, Temp};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Access {
     // offset to frame pointer
     Frame(i64),
@@ -17,7 +17,7 @@ pub enum Access {
 #[derive(Clone)]
 pub struct Register(pub Symbol);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Variable {
     pub access: Access,
 }
