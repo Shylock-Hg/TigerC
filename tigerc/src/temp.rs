@@ -12,6 +12,10 @@ impl Temp {
         Temp(LowerIdent::new_anonymous())
     }
 
+    pub fn new_debug(id: LowerIdent) -> Self {
+        Temp(id)
+    }
+
     pub fn new_named(name: Symbol) -> Self {
         Temp(LowerIdent::new_named(name))
     }

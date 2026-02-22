@@ -1,4 +1,5 @@
 use std::{
+    backtrace::Backtrace,
     cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
@@ -320,7 +321,8 @@ impl<'a> Alloc<'a> {
             let mut nodes = self.adjacent(u);
             nodes.push(*u);
             self.enable_moves(nodes);
-            self.spill_work_list.retain(|v| *v != *u);
+            self.spill_work_list
+                .remove(self.spill_work_list.iter().position(|v| v == u).unwrap());
             if self.move_related(&u) {
                 self.freeze_work_list.push(*u);
             } else {
@@ -360,7 +362,12 @@ impl<'a> Alloc<'a> {
         if let Some(i) = res {
             self.freeze_work_list.remove(i);
         } else {
-            self.spill_work_list.retain(|t| t != v);
+            self.spill_work_list.remove(
+                self.spill_work_list
+                    .iter()
+                    .position(|val| val == v)
+                    .unwrap(),
+            );
         }
         self.coalesced_nodes.insert(*v);
         self.alias.insert(*v, *u);

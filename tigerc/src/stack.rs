@@ -1,5 +1,6 @@
 use std::collections::LinkedList;
 
+#[derive(Debug)]
 pub struct Stack<T> {
     list: LinkedList<T>,
 }
