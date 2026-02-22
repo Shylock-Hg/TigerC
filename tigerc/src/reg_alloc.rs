@@ -270,7 +270,6 @@ impl<'a> Alloc<'a> {
                 || (!self.precolored.contains(&u) && self.briggs(&u, &v))
             {
                 self.coalesced_moves.push(m);
-                self.add_work_list(u);
                 self.combine(&u, &v);
                 self.add_work_list(u);
             } else {
