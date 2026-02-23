@@ -56,7 +56,7 @@ impl<F: Frame> Level<F> {
     pub fn outermost() -> Level<F> {
         Level {
             current: Rc::new(RefCell::new(F::new(
-                Label::new_named(ident_pool::symbol("__main")),
+                Label::new_named(ident_pool::symbol("main")), // compatible with libc
                 Default::default(),
             ))),
             parent: None,
