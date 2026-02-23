@@ -2,7 +2,7 @@ use std::io::Write;
 
 use translate::Fragment;
 
-use crate::{amd64::FrameAmd64, frame::Frame};
+use crate::{amd64::FrameAmd64, frame::Frame, type_inference::TypeInference};
 
 pub mod amd64;
 pub mod asm;
@@ -62,6 +62,9 @@ pub fn compile_file(f: &str, output_asm: &str) {
 
     let mut output_asm = std::fs::File::create(output_asm).unwrap();
     writeln!(output_asm, "global main").unwrap();
+    for (n, _) in TypeInference::external_function() {
+        writeln!(output_asm, "extern {}", n).unwrap();
+    }
     writeln!(output_asm, "section .rodata").unwrap();
     fragments.iter().for_each(|f| match f {
         canon::Fragment::Function { .. } => (),

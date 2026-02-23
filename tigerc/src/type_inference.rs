@@ -121,6 +121,59 @@ pub struct TypeInference {
 }
 
 impl TypeInference {
+    pub fn external_function() -> Vec<(Symbol, type_ast::Type)> {
+        vec![
+            (
+                ident_pool::symbol("print"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("print"),
+                    params: vec![type_ast::Type::Str],
+                    return_ty: Box::new(type_ast::Type::Nothing),
+                }),
+            ),
+            (
+                ident_pool::symbol("getchar"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("getchar"),
+                    params: vec![],
+                    return_ty: Box::new(type_ast::Type::Str),
+                }),
+            ),
+            (
+                ident_pool::symbol("flush"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("flush"),
+                    params: vec![],
+                    return_ty: Box::new(type_ast::Type::Nothing),
+                }),
+            ),
+            (
+                ident_pool::symbol("ord"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("ord"),
+                    params: vec![type_ast::Type::Str],
+                    return_ty: Box::new(type_ast::Type::Int),
+                }),
+            ),
+            (
+                ident_pool::symbol("chr"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("chr"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Str),
+                }),
+            ),
+            (
+                ident_pool::symbol("malloc"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("malloc"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Int),
+                }),
+            ),
+        ]
+    }
+
     pub fn new() -> Self {
         let mut ty_table = SymbolTable::new();
         ty_table.insert_symbol(
@@ -136,56 +189,9 @@ impl TypeInference {
             },
         );
         let mut var_table = SymbolTable::new();
-        var_table.insert_symbol(
-            ident_pool::symbol("print"),
-            SymbolValue {
-                ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("print"),
-                    params: vec![type_ast::Type::Str],
-                    return_ty: Box::new(type_ast::Type::Nothing),
-                }),
-            },
-        );
-        var_table.insert_symbol(
-            ident_pool::symbol("getchar"),
-            SymbolValue {
-                ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("getchar"),
-                    params: vec![],
-                    return_ty: Box::new(type_ast::Type::Str),
-                }),
-            },
-        );
-        var_table.insert_symbol(
-            ident_pool::symbol("flush"),
-            SymbolValue {
-                ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("flush"),
-                    params: vec![],
-                    return_ty: Box::new(type_ast::Type::Nothing),
-                }),
-            },
-        );
-        var_table.insert_symbol(
-            ident_pool::symbol("ord"),
-            SymbolValue {
-                ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("ord"),
-                    params: vec![type_ast::Type::Str],
-                    return_ty: Box::new(type_ast::Type::Int),
-                }),
-            },
-        );
-        var_table.insert_symbol(
-            ident_pool::symbol("chr"),
-            SymbolValue {
-                ty: type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("chr"),
-                    params: vec![type_ast::Type::Int],
-                    return_ty: Box::new(type_ast::Type::Str),
-                }),
-            },
-        );
+        Self::external_function()
+            .into_iter()
+            .for_each(|(k, v)| var_table.insert_symbol(k, SymbolValue { ty: v }));
         Self {
             type_symbol_table: ty_table,
             variable_symbol_table: var_table,
