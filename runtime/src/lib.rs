@@ -182,7 +182,7 @@ extern "C" fn printi(num: i32) {
 
 // Get the pointer where the string starts, i.e. after the data layout.
 fn string_offset(ptr: *const c_char) -> *const c_char {
-    let ptr = ptr as *const usize;
+    let ptr = ptr as *const u8;
     unsafe { ptr.add(STRING_HEADER_SIZE) as *const c_char }
 }
 
