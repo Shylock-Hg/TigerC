@@ -171,6 +171,14 @@ impl TypeInference {
                     return_ty: Box::new(type_ast::Type::Int),
                 }),
             ),
+            (
+                ident_pool::symbol("stringEqual"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("stringEqual"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Int),
+                }),
+            ),
         ]
     }
 

@@ -60,21 +60,21 @@ pub fn compile_file(f: &str, output_asm: &str) {
         })
         .collect::<Vec<_>>();
 
-    let mut output_asm = std::fs::File::create(output_asm).unwrap();
-    writeln!(output_asm, "global main").unwrap();
+    let mut output_asm_f = std::fs::File::create(output_asm).unwrap();
+    writeln!(output_asm_f, "global main").unwrap();
     for (n, _) in TypeInference::external_function() {
-        writeln!(output_asm, "extern {}", n).unwrap();
+        writeln!(output_asm_f, "extern {}", n).unwrap();
     }
-    writeln!(output_asm, "section .rodata").unwrap();
+    writeln!(output_asm_f, "section .rodata").unwrap();
     fragments.iter().for_each(|f| match f {
         canon::Fragment::Function { .. } => (),
         canon::Fragment::StringLiteral(label, val) => {
             // 0 for c-style compatible
-            writeln!(output_asm, "{}: db \"{}\", 0", label, val).unwrap();
+            writeln!(output_asm_f, "{}: db \"{}\", 0", label, val).unwrap();
         }
     });
 
-    writeln!(output_asm, "section .text").unwrap();
+    writeln!(output_asm_f, "section .text").unwrap();
     fragments.into_iter().for_each(|f| match f {
         canon::Fragment::Function { label, frame, body } => {
             let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(body.1);
@@ -86,8 +86,23 @@ pub fn compile_file(f: &str, output_asm: &str) {
             // the order of blocks in trace is invariant
             let trace = reg_alloc::alloc::<FrameAmd64>(trace, frame.clone());
             let trace = frame.borrow().proc_entry_exit3(trace);
-            trace.write(&mut output_asm);
+            trace.write(&mut output_asm_f);
         }
         canon::Fragment::StringLiteral(..) => (),
     });
+
+    output_asm_f.flush().unwrap();
+    nasm(output_asm);
+}
+
+fn nasm(asm: &str) {
+    let ret = std::process::Command::new("nasm")
+        .arg("-f")
+        .arg("elf64")
+        .arg(asm)
+        .status()
+        .unwrap();
+    if !ret.success() {
+        panic!("{}", ret);
+    }
 }

@@ -1,5 +1,6 @@
 use std::vec::Vec;
 
+use crate::amd64::FrameAmd64;
 use crate::asm;
 use crate::asm::Instruction;
 use crate::canon;
@@ -206,6 +207,47 @@ impl<F: Frame> Gen<F> {
                 };
                 self.emit(inst);
             }
+            ir::Exp::BinOp {
+                op: ir::BinOp::Divide,
+                left,
+                right,
+            } => {
+                let left_temp = self.munch_expression(*left);
+                let right_temp = self.munch_expression(*right);
+
+                // mov rdx 0
+                let inst = asm::Instruction::Move {
+                    assembly: "mov `d0, 0".to_string(),
+                    destination: vec![FrameAmd64::rdx()],
+                    source: vec![],
+                };
+                self.emit(inst);
+
+                // mov rax left_temp
+                let inst = asm::Instruction::Move {
+                    assembly: "mov `d0, `s0".to_string(),
+                    destination: vec![FrameAmd64::rax()],
+                    source: vec![left_temp],
+                };
+                self.emit(inst);
+
+                // idiv right_temp
+                let inst = asm::Instruction::Operation {
+                    assembly: "idiv `s0".to_string(),
+                    destination: vec![FrameAmd64::rax(), FrameAmd64::rdx()],
+                    source: vec![right_temp, FrameAmd64::rax(), FrameAmd64::rdx()],
+                    jump: None,
+                };
+                self.emit(inst);
+
+                // mov temp rax
+                let inst = asm::Instruction::Move {
+                    assembly: "mov `d0, `s0".to_string(),
+                    destination: vec![temp],
+                    source: vec![FrameAmd64::rax()],
+                };
+                self.emit(inst);
+            }
             ir::Exp::BinOp { op, left, right } => {
                 let left_temp = self.munch_expression(*left);
                 let right_temp = self.munch_expression(*right);
@@ -222,7 +264,7 @@ impl<F: Frame> Gen<F> {
                     ir::BinOp::Plus => "add `d0, `s0",
                     ir::BinOp::Minus => "sub `d0, `s0",
                     ir::BinOp::Multiply => "imul `d0, `s0",
-                    ir::BinOp::Divide => "idiv `d0, `s0",
+                    ir::BinOp::Divide => unreachable!(),
                     ir::BinOp::And => "and `d0, `s0",
                     ir::BinOp::Or => "or `d0, `s0",
                     ir::BinOp::Xor => "xor `d0, `s0",
