@@ -70,7 +70,9 @@ pub fn compile_file(f: &str, output_asm: &str) {
         canon::Fragment::Function { .. } => (),
         canon::Fragment::StringLiteral(label, val) => {
             // 0 for c-style compatible
-            writeln!(output_asm_f, "{}: db \"{}\", 0", label, val).unwrap();
+            writeln!(output_asm_f, "{}:", label).unwrap();
+            writeln!(output_asm_f, "dq {}", val.len()).unwrap();
+            writeln!(output_asm_f, "db \"{}\", 0", val).unwrap();
         }
     });
 
