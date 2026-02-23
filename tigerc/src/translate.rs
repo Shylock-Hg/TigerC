@@ -771,7 +771,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                     left: Box::new(ir::Exp::BinOp {
                         op: ir::BinOp::Minus,
                         left: Box::new(lv),
-                        right: Box::new(ir::Exp::Const(data_layout::ARRAY_HEADER_SIZE)),
+                        right: Box::new(ir::Exp::Const(data_layout::ARRAY_HEADER_SIZE as i64)),
                     }),
                     op: ir::BinOp::Plus,
                     right: Box::new(ir::Exp::BinOp {

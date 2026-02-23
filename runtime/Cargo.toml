@@ -1,0 +1,12 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "runtime"
+crate-type = ["staticlib"]
+
+[dependencies]
+tiger_c = { path = "../tigerc" }
+
