@@ -3,6 +3,7 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use crate::ident_pool::Symbol;
+use crate::tokenizer;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Ast(pub Expr);
@@ -29,7 +30,7 @@ impl Display for Value {
             Value::Nothing => write!(f, "()"),
             Value::Nil => write!(f, "nil"),
             Value::Int(i) => write!(f, "{}", i),
-            Value::Str(s) => write!(f, "\"{}\"", s),
+            Value::Str(s) => write!(f, "\"{}\"", tokenizer::de_escape(s)),
         }
     }
 }

@@ -90,7 +90,7 @@ impl Display for Token {
             Token::Comment => write!(f, "Comment"),
             Token::Ident(s) => write!(f, "Ident({})", s),
             Token::Number(n) => write!(f, "Number({})", n),
-            Token::Str(s) => write!(f, "Str({})", s),
+            Token::Str(s) => write!(f, "Str({})", de_escape(s)),
             Token::Slash => write!(f, "Slash"),
             Token::OpenBrace => write!(f, "OpenBrace"),
             Token::CloseBrace => write!(f, "CloseBrace"),
@@ -270,14 +270,15 @@ impl cursor::Cursor<'_> {
             match self.first() {
                 '"' => {
                     if escape {
-                        buf.push(self.bump().unwrap());
                         escape = false;
+                        buf.push(self.bump().unwrap());
                     } else {
                         break;
                     }
                 }
                 't' => {
                     if escape {
+                        escape = false;
                         buf.push('\t');
                         self.bump();
                     } else {
@@ -286,6 +287,7 @@ impl cursor::Cursor<'_> {
                 }
                 'n' => {
                     if escape {
+                        escape = false;
                         buf.push('\n');
                         self.bump();
                     } else {
@@ -298,10 +300,16 @@ impl cursor::Cursor<'_> {
                         buf.push(self.bump().unwrap());
                     } else {
                         escape = true;
+                        self.bump().unwrap();
                     }
                 }
                 _ => {
-                    buf.push(self.bump().unwrap());
+                    if escape {
+                        escape = false;
+                        panic!("Can't escape: {}", self.first());
+                    } else {
+                        buf.push(self.bump().unwrap());
+                    }
                 }
             }
         }
@@ -362,4 +370,38 @@ pub fn is_id_continue(c: char) -> bool {
 
 pub fn is_digit(c: char) -> bool {
     c.is_ascii_digit()
+}
+
+pub fn de_escape(s: &str) -> String {
+    let mut ns = String::new();
+    for c in s.chars() {
+        match c {
+            '"' => {
+                ns.push_str("\\\"");
+            }
+            '\t' => {
+                ns.push_str("\\t");
+            }
+            '\n' => {
+                ns.push_str("\\n");
+            }
+            '\\' => {
+                ns.push_str("\\\\");
+            }
+            _ => ns.push(c),
+        }
+    }
+    ns
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_token_escape_string() {
+        let it = super::tokenize(r#""\n""#);
+        let tokens = it.collect::<Vec<_>>();
+        assert_eq!(tokens.len(), 1);
+        assert_eq!(tokens[0].node, super::Token::Str("\n".to_string()));
+    }
 }

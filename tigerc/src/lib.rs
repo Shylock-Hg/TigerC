@@ -72,7 +72,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             // 0 for c-style compatible
             writeln!(output_asm_f, "{}:", label).unwrap();
             writeln!(output_asm_f, "dq {}", val.len()).unwrap();
-            writeln!(output_asm_f, "db \"{}\", 0", val).unwrap();
+            writeln!(output_asm_f, "db \"{}\", 0", to_nasm(val)).unwrap();
         }
     });
 
@@ -107,4 +107,9 @@ fn nasm(asm: &str) {
     if !ret.success() {
         panic!("{}", ret);
     }
+}
+
+// de-escape
+fn to_nasm(s: &str) -> String {
+    tokenizer::de_escape(s)
 }
