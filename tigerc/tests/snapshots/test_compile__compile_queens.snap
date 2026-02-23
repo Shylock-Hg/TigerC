@@ -4,14 +4,14 @@ expression: result
 ---
 global main
 section .rodata
-__anon_170: db "0", 0
-__anon_174: db "9", 0
-__anon_213: db " ", 0
-__anon_217: db "\n", 0
-__anon_250: db "0", 0
-__anon_327: db "0", 0
-__anon_350: db "-", 0
-__anon_356: db "0", 0
-__anon_378: db "\n", 0
-__anon_379: db " ", 0
+__anon_136: db "0", 0
+__anon_145: db "9", 0
+__anon_166: db " ", 0
+__anon_170: db "\n", 0
+__anon_195: db "0", 0
+__anon_307: db "0", 0
+__anon_318: db "-", 0
+__anon_322: db "0", 0
+__anon_340: db "\n", 0
+__anon_341: db " ", 0
 section .text

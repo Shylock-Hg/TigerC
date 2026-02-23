@@ -11,4 +11,4 @@ Posed { node: CloseParen, pos: Pos { line: 3, column: 8 } }
 Posed { node: Ident(then), pos: Pos { line: 3, column: 10 } }
 Posed { node: Number(13), pos: Pos { line: 3, column: 15 } }
 Posed { node: Ident(else), pos: Pos { line: 3, column: 18 } }
-Posed { node: Str( ), pos: Pos { line: 3, column: 24 } }
+Posed { node: Str(" "), pos: Pos { line: 3, column: 24 } }

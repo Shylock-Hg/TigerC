@@ -90,7 +90,7 @@ impl Display for Token {
             Token::Comment => write!(f, "Comment"),
             Token::Ident(s) => write!(f, "Ident({})", s),
             Token::Number(n) => write!(f, "Number({})", n),
-            Token::Str(s) => write!(f, "Str({})", de_escape(s)),
+            Token::Str(s) => write!(f, "Str(\"{}\")", de_escape(s)),
             Token::Slash => write!(f, "Slash"),
             Token::OpenBrace => write!(f, "OpenBrace"),
             Token::CloseBrace => write!(f, "CloseBrace"),

@@ -23,7 +23,7 @@ Posed { node: Ident(g), pos: Pos { line: 5, column: 5 } }
 Posed { node: OpenParen, pos: Pos { line: 5, column: 6 } }
 Posed { node: Number(3), pos: Pos { line: 5, column: 7 } }
 Posed { node: Comma, pos: Pos { line: 5, column: 8 } }
-Posed { node: Str(one), pos: Pos { line: 5, column: 9 } }
+Posed { node: Str("one"), pos: Pos { line: 5, column: 9 } }
 Posed { node: Comma, pos: Pos { line: 5, column: 14 } }
 Posed { node: Number(5), pos: Pos { line: 5, column: 15 } }
 Posed { node: CloseParen, pos: Pos { line: 5, column: 16 } }

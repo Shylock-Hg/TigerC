@@ -20,5 +20,5 @@ Posed { node: Ident(d), pos: Pos { line: 7, column: 6 } }
 Posed { node: Eq, pos: Pos { line: 7, column: 7 } }
 Posed { node: Ident(a), pos: Pos { line: 7, column: 8 } }
 Posed { node: Ident(in), pos: Pos { line: 9, column: 1 } }
-Posed { node: Str(), pos: Pos { line: 10, column: 2 } }
+Posed { node: Str(""), pos: Pos { line: 10, column: 2 } }
 Posed { node: Ident(end), pos: Pos { line: 11, column: 1 } }

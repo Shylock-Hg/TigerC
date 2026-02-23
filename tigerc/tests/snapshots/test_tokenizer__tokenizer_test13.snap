@@ -4,4 +4,4 @@ expression: "tokenize_snapshot(\"tests/testcases/test13.tig\")"
 ---
 Posed { node: Number(3), pos: Pos { line: 3, column: 1 } }
 Posed { node: Gt, pos: Pos { line: 3, column: 3 } }
-Posed { node: Str(df), pos: Pos { line: 3, column: 5 } }
+Posed { node: Str("df"), pos: Pos { line: 3, column: 5 } }

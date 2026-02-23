@@ -28,7 +28,7 @@ Posed { node: Ident(rectype), pos: Pos { line: 8, column: 16 } }
 Posed { node: OpenBrace, pos: Pos { line: 8, column: 24 } }
 Posed { node: Ident(name), pos: Pos { line: 8, column: 25 } }
 Posed { node: Eq, pos: Pos { line: 8, column: 29 } }
-Posed { node: Str(aname), pos: Pos { line: 8, column: 30 } }
+Posed { node: Str("aname"), pos: Pos { line: 8, column: 30 } }
 Posed { node: Comma, pos: Pos { line: 8, column: 37 } }
 Posed { node: Ident(id), pos: Pos { line: 8, column: 39 } }
 Posed { node: Eq, pos: Pos { line: 8, column: 41 } }

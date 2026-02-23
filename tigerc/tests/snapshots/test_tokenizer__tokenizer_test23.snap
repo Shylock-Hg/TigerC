@@ -22,7 +22,7 @@ Posed { node: Ident(rectype), pos: Pos { line: 5, column: 17 } }
 Posed { node: OpenBrace, pos: Pos { line: 5, column: 25 } }
 Posed { node: Ident(name), pos: Pos { line: 5, column: 26 } }
 Posed { node: Eq, pos: Pos { line: 5, column: 30 } }
-Posed { node: Str(aname), pos: Pos { line: 5, column: 31 } }
+Posed { node: Str("aname"), pos: Pos { line: 5, column: 31 } }
 Posed { node: Comma, pos: Pos { line: 5, column: 38 } }
 Posed { node: Ident(id), pos: Pos { line: 5, column: 40 } }
 Posed { node: Eq, pos: Pos { line: 5, column: 42 } }
@@ -39,5 +39,5 @@ Posed { node: Ident(rec1), pos: Pos { line: 8, column: 5 } }
 Posed { node: Dot, pos: Pos { line: 8, column: 9 } }
 Posed { node: Ident(id), pos: Pos { line: 8, column: 10 } }
 Posed { node: Assign, pos: Pos { line: 8, column: 13 } }
-Posed { node: Str(), pos: Pos { line: 8, column: 16 } }
+Posed { node: Str(""), pos: Pos { line: 8, column: 16 } }
 Posed { node: Ident(end), pos: Pos { line: 9, column: 1 } }
