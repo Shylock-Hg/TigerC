@@ -4,7 +4,7 @@ mod test {
     use tiger_c::compile_file;
 
     #[test]
-    fn test_compile() {
+    fn test_compile1() {
         let path = "tests/testcases/merge.tig";
         compile_file(path, "tests/testcases/merge.S");
     }

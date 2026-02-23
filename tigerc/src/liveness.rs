@@ -7,6 +7,7 @@ use std::{
 use crate::{
     asm,
     flow::FlowGraph,
+    frame::Frame,
     graph::{Entry, Node},
     symbol_table::SymbolTable,
     temp::{Label, Temp},
@@ -63,6 +64,13 @@ impl InterferenceGraph {
             .or_insert(Neighbor { outcome: vec![a] });
     }
 
+    pub fn add_interference_to(&mut self, a: Temp, b: Temp) {
+        self.g
+            .entry(a)
+            .and_modify(|v| v.outcome.push(b))
+            .or_insert(Neighbor { outcome: vec![b] });
+    }
+
     //    fn add_move(&mut self, mv: Move) {
     //        self.m_list.push(mv)
     //    }
@@ -105,7 +113,7 @@ pub struct Move {
     pub src: Temp,
 }
 
-pub fn liveness_analyze<'a>(
+pub fn liveness_analyze<'a, F: Frame>(
     flow: &FlowGraph<'a>,
     done_label: Label,
 ) -> (InterferenceGraph, Vec<Move>, HashMap<Temp, Vec<Move>>) {
@@ -121,7 +129,7 @@ pub fn liveness_analyze<'a>(
     let mut work_list_moves = Vec::<Move>::new();
     let mut move_list = HashMap::<Temp, Vec<Move>>::new();
     let mut visited = HashSet::<Entry>::new();
-    build_iterference_graph(
+    build_iterference_graph::<F>(
         flow,
         &live_map,
         done_node,
@@ -133,7 +141,7 @@ pub fn liveness_analyze<'a>(
     (iter_g, work_list_moves, move_list)
 }
 
-fn build_iterference_graph<'a>(
+fn build_iterference_graph<'a, F: Frame>(
     flow: &FlowGraph<'a>,
     live_map: &HashMap<ProgramPoint, HashSet<Temp>>,
     node: &Node<&'a asm::Block>,
@@ -142,6 +150,7 @@ fn build_iterference_graph<'a>(
     move_list: &mut HashMap<Temp, Vec<Move>>,
     visited: &mut HashSet<Entry>,
 ) {
+    let precolored = F::precolored();
     let block = node.value();
     for (offset, inst) in block.instructions.iter().enumerate() {
         // If def is not used, it won't interference b at all
@@ -150,8 +159,16 @@ fn build_iterference_graph<'a>(
         for def in inst.def() {
             for b in live_map.get(&ProgramPoint { block, offset }).unwrap() {
                 // an optimization for move
-                if !(inst.is_move() && use_.contains(b)) && def != *b {
-                    iter_g.add_interference(def, *b);
+                if
+                // FIXME: this lead node outside of interference graph?
+                /* !(inst.is_move() && use_.contains(b)) && */
+                def != *b {
+                    if !precolored.contains(&def) {
+                        iter_g.add_interference(def, *b);
+                    }
+                    if !precolored.contains(b) {
+                        iter_g.add_interference(*b, def);
+                    }
                 }
             }
             for u in use_.iter() {
@@ -176,7 +193,7 @@ fn build_iterference_graph<'a>(
         }
         visited.insert(*income);
         let node = flow.get(income);
-        build_iterference_graph(
+        build_iterference_graph::<F>(
             flow,
             live_map,
             node,

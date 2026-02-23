@@ -440,7 +440,11 @@ impl<'a> Alloc<'a> {
     }
 
     fn is_significant(&self, t: &Temp) -> bool {
-        self.degree[t] >= self.k
+        if self.precolored.contains(t) {
+            true
+        } else {
+            self.degree[t] >= self.k
+        }
     }
 
     fn get_alias(&self, t: &Temp) -> Temp {
@@ -477,7 +481,8 @@ impl<'a> Alloc<'a> {
 
 pub fn alloc<F: Frame>(trace: asm::Trace, frame: Rc<RefCell<F>>) -> asm::Trace {
     let flow = flow::flow_analyze(&trace);
-    let (inter_g, work_list_move, work_list) = liveness::liveness_analyze(&flow, trace.done_label);
+    let (inter_g, work_list_move, work_list) =
+        liveness::liveness_analyze::<F>(&flow, trace.done_label);
     let mut allocator = Alloc::new::<F>(flow, inter_g, work_list_move, work_list);
     let (trace, continue_) = allocator.alloc(frame.clone(), trace.clone());
     if continue_ {
