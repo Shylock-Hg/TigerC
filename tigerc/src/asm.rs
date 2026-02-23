@@ -153,6 +153,11 @@ impl Trace {
         let val = self.blocks.pop().unwrap();
         self.blocks.push(f(val))
     }
+
+    pub fn extend(&mut self, app: Self) {
+        self.blocks.extend(app.blocks);
+        self.done_label = app.done_label;
+    }
 }
 
 impl Display for Trace {

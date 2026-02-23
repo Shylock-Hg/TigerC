@@ -47,4 +47,5 @@ pub trait Frame {
 
     fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement;
     fn proc_entry_exit2(&self, insts: Vec<asm::Instruction>) -> Vec<asm::Instruction>;
+    fn proc_entry_exit3(&self, body: asm::Trace) -> asm::Trace;
 }

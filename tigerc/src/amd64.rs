@@ -2,6 +2,7 @@ use std::sync::Once;
 
 use indexmap::IndexMap;
 
+use crate::asm::Trace;
 use crate::frame::{Access, Frame, Variable};
 use crate::temp::{Label, Temp};
 use crate::{asm, ir};
@@ -353,5 +354,68 @@ impl Frame for FrameAmd64 {
 
         insts.push(inst);
         insts
+    }
+
+    fn proc_entry_exit3(&self, body: asm::Trace) -> asm::Trace {
+        let stack_size = {
+            let size = -self.offset;
+            if size % 16 != 0 {
+                // Align the stack of 16 bytes according to x86_64 standard
+                (size & !0xF) + 0x10
+            } else {
+                size
+            }
+        };
+
+        // prologue
+        let mut insts = Vec::new();
+        insts.push(asm::Instruction::Label {
+            assembly: format!("{}:", self.name),
+            label: self.name,
+        });
+        insts.push(asm::Instruction::Operation {
+            assembly: "push `s0".to_string(),
+            destination: vec![],
+            source: vec![Self::rbp()],
+            jump: None,
+        });
+        insts.push(asm::Instruction::Move {
+            assembly: "mov `d0 `s0".to_string(),
+            destination: vec![Self::rbp()],
+            source: vec![Self::rsp()],
+        });
+        insts.push(asm::Instruction::Operation {
+            assembly: format!("sub `d0, {}", stack_size),
+            destination: vec![Self::rsp()],
+            source: vec![],
+            jump: None,
+        });
+        let mut new_trace = Trace::new(body.done_label);
+        new_trace.add_block(asm::Block::new(insts));
+        new_trace.extend(body);
+
+        // epilogue
+        let end_label = Label::new();
+        let insts = vec![
+            asm::Instruction::Label {
+                assembly: format!("{}:", end_label),
+                label: end_label,
+            },
+            asm::Instruction::Operation {
+                assembly: "leave".to_string(),
+                destination: vec![],
+                source: vec![],
+                jump: None,
+            },
+            asm::Instruction::Operation {
+                assembly: "ret".to_string(),
+                destination: vec![],
+                source: vec![],
+                jump: None,
+            },
+        ];
+        new_trace.add_block(asm::Block::new(insts));
+
+        new_trace
     }
 }
