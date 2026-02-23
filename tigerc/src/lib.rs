@@ -83,6 +83,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             // the order of blocks in trace is invariant
             let trace = reg_alloc::alloc::<FrameAmd64>(trace, frame.clone());
             let trace = frame.borrow().proc_entry_exit3(trace);
+            trace.write(&mut output_asm);
         }
         canon::Fragment::StringLiteral(..) => (),
     });

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, fs::File, io::Write};
 
 use crate::temp::{Label, Temp};
 
@@ -157,6 +157,14 @@ impl Trace {
     pub fn extend(&mut self, app: Self) {
         self.blocks.extend(app.blocks);
         self.done_label = app.done_label;
+    }
+
+    pub fn write<W: Write>(&self, w: &mut W) {
+        for b in &self.blocks {
+            for inst in &b.instructions {
+                writeln!(w, "{}", inst.instance()).unwrap();
+            }
+        }
     }
 }
 
