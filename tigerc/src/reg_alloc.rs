@@ -142,8 +142,27 @@ impl<'a> Alloc<'a> {
             let trace = self.rewrite_program(frame, trace);
             (trace, true)
         } else {
-            (trace, false)
+            (self.rewrite_allocation(trace), false)
         }
+    }
+
+    fn rewrite_allocation(&self, mut trace: asm::Trace) -> asm::Trace {
+        for block in &mut trace.blocks {
+            for inst in &mut block.instructions {
+                let def = inst.def();
+                inst.set_dest(self.rewrite_allocation_temp(def));
+                let use_ = inst.use_();
+                inst.set_source(self.rewrite_allocation_temp(use_));
+            }
+        }
+        trace
+    }
+
+    fn rewrite_allocation_temp(&self, temps: Vec<Temp>) -> Vec<Temp> {
+        temps
+            .into_iter()
+            .map(|t| self.color.get(&t).cloned().unwrap_or(t))
+            .collect()
     }
 
     fn rewrite_program<F: Frame>(
