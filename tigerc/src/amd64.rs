@@ -380,7 +380,7 @@ impl Frame for FrameAmd64 {
             jump: None,
         });
         insts.push(asm::Instruction::Move {
-            assembly: "mov `d0 `s0".to_string(),
+            assembly: "mov `d0, `s0".to_string(),
             destination: vec![Self::rbp()],
             source: vec![Self::rsp()],
         });
