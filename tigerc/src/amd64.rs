@@ -242,14 +242,10 @@ impl Frame for FrameAmd64 {
         Self::rax()
     }
 
-    fn precolored() -> Vec<Temp> {
-        vec![Self::rbp(), Self::rsp()]
-    }
-
     fn colors() -> Vec<Temp> {
         vec![
-            //Self::rbp(),
-            //Self::rsp(),
+            Self::rbp(),
+            Self::rsp(),
             Self::rax(),
             Self::rbx(),
             Self::rcx(),
@@ -375,7 +371,7 @@ impl Frame for FrameAmd64 {
         });
         insts.push(asm::Instruction::Operation {
             assembly: "push `s0".to_string(),
-            destination: vec![],
+            destination: vec![Self::rsp()],
             source: vec![Self::rbp()],
             jump: None,
         });

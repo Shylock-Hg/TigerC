@@ -61,8 +61,13 @@ fn adj_list_of_inter_graph(inter_g: &InterferenceGraph) -> HashMap<Temp, Vec<Tem
         .collect()
 }
 
-fn degree_of_inter_graph(inter_g: &InterferenceGraph) -> HashMap<Temp, usize> {
-    inter_g.iter().map(|(t, n)| (*t, n.outcome.len())).collect()
+fn degree_of_inter_graph<F: Frame>(inter_g: &InterferenceGraph) -> HashMap<Temp, usize> {
+    let mut degree = inter_g
+        .iter()
+        .map(|(t, n)| (*t, n.outcome.len()))
+        .collect::<HashMap<Temp, usize>>();
+    degree.extend(F::colors().into_iter().map(|v| (v, usize::max_value())));
+    degree
 }
 
 impl<'a> Alloc<'a> {
@@ -72,8 +77,13 @@ impl<'a> Alloc<'a> {
         work_list_moves: Vec<Move>,
         move_list: HashMap<Temp, Vec<Move>>,
     ) -> Self {
-        let k = F::colors().len();
-        let initial = inter_g.iter().map(|(k, _)| k).collect::<Vec<_>>();
+        let colors = F::colors();
+        let k = colors.len();
+        let initial = inter_g
+            .iter()
+            .map(|(k, _)| k)
+            .filter(|v| !colors.contains(v))
+            .collect::<Vec<_>>();
         let mut spill_work_list = vec![];
         let mut simplify_work_list = vec![];
         let mut freeze_work_list = vec![];
@@ -103,14 +113,13 @@ impl<'a> Alloc<'a> {
             active_moves: Vec::<Move>::new(),
             adj_set: adj_set_of_inter_graph(&inter_g),
             adj_list: adj_list_of_inter_graph(&inter_g),
-            color: F::precolored().into_iter().map(|v| (v, v)).collect(),
-            degree: degree_of_inter_graph(&inter_g),
-
+            color: F::colors().into_iter().map(|v| (v, v)).collect(),
+            degree: degree_of_inter_graph::<F>(&inter_g),
             alias: HashMap::new(),
             move_list,
             flow,
             k,
-            precolored: F::precolored(),
+            precolored: F::colors(),
             colors: F::colors(),
         }
     }
@@ -325,12 +334,23 @@ impl<'a> Alloc<'a> {
         }
     }
 
+    fn debug_node_location(&self, t: &Temp) {
+        dbg!(self.simplify_work_list.contains(t));
+        dbg!(self.freeze_work_list.contains(t));
+        dbg!(self.spill_work_list.contains(t));
+        dbg!(self.spilled_nodes.contains(t));
+        dbg!(self.coalesced_nodes.contains(t));
+        dbg!(self.colored_nodes.contains(t));
+        dbg!(self.select_stack.contains(t));
+    }
+
     // spill temp with higher cost first
     fn spill_cost(&self, t: &Temp) -> f32 {
         self.degree[t] as f32
     }
 
     fn decrement_degree(&mut self, u: &Temp) {
+        // TODO: adjSet add each precolors?
         let dr = self.degree.get_mut(u).unwrap();
         let d = *dr;
         *dr -= 1;
@@ -338,12 +358,20 @@ impl<'a> Alloc<'a> {
             let mut nodes = self.adjacent(u);
             nodes.push(*u);
             self.enable_moves(nodes);
-            self.spill_work_list
-                .remove(self.spill_work_list.iter().position(|v| v == u).unwrap());
-            if self.move_related(&u) {
-                self.freeze_work_list.push(*u);
+            //            self.debug_node_location(u);
+            if let Some(i) = self.spill_work_list.iter().position(|v| v == u) {
+                // HINT: sometimes, this node is already in freeze_work_list or simplify_work_list
+                // but the degree increase in previous combine->add_edge
+                self.spill_work_list.remove(i);
+                if self.move_related(&u) {
+                    self.freeze_work_list.push(*u);
+                } else {
+                    self.simplify_work_list.push(*u);
+                }
             } else {
-                self.simplify_work_list.push(*u);
+                debug_assert!(
+                    self.simplify_work_list.contains(u) || self.freeze_work_list.contains(u)
+                );
             }
         }
     }

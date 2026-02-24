@@ -150,7 +150,7 @@ fn build_iterference_graph<'a, F: Frame>(
     move_list: &mut HashMap<Temp, Vec<Move>>,
     visited: &mut HashSet<Entry>,
 ) {
-    let precolored = F::precolored();
+    let precolored = F::colors();
     let block = node.value();
     for (offset, inst) in block.instructions.iter().enumerate() {
         // If def is not used, it won't interference b at all

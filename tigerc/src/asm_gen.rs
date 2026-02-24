@@ -31,6 +31,10 @@ impl<F: Frame> Gen<F> {
         self.insts
     }
 
+    pub fn get_raw_result(&self) -> &Vec<Instruction> {
+        &self.insts
+    }
+
     pub fn munch_trace(&mut self, trace: canon::Trace) {
         for block in trace.blocks {
             self.munch_block(block);
@@ -185,6 +189,7 @@ impl<F: Frame> Gen<F> {
                     ir::Exp::Name(l) => l,
                     _ => todo!(), // TODO need this?
                 };
+                // FIXME: pass these arguments to parameters by arg_registers and frame
                 let argument_temps = args
                     .into_iter()
                     .map(|arg| self.munch_expression(arg))
