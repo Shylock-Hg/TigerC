@@ -71,17 +71,6 @@ impl PartialEq for FrameAmd64 {
 impl Eq for FrameAmd64 {}
 
 impl FrameAmd64 {
-    pub fn arg_registers() -> Vec<Temp> {
-        vec![
-            Self::rdi(),
-            Self::rsi(),
-            Self::rdx(),
-            Self::rcx(),
-            Self::r8(),
-            Self::r9(),
-        ]
-    }
-
     fn callee_saved_registers() -> Vec<Temp> {
         vec![
             Self::rbx(),
@@ -192,9 +181,10 @@ impl FrameAmd64 {
     #[must_use]
     fn allocate_variable(&mut self, var: ir::Variable) -> Variable {
         if var.0 {
+            let offset = self.offset;
             self.offset -= WORD_SIZE;
             Variable {
-                access: Access::Frame(self.offset),
+                access: Access::Frame(offset),
             }
         } else {
             Variable {
@@ -263,6 +253,17 @@ impl Frame for FrameAmd64 {
         ]
     }
 
+    fn arg_registers() -> Vec<Temp> {
+        vec![
+            Self::rdi(),
+            Self::rsi(),
+            Self::rdx(),
+            Self::rcx(),
+            Self::r8(),
+            Self::r9(),
+        ]
+    }
+
     fn word_size() -> i64 {
         WORD_SIZE
     }
@@ -293,26 +294,41 @@ impl Frame for FrameAmd64 {
         let arg_registers = Self::arg_registers();
         let arg_registers_len = arg_registers.len();
         // save arguments from register
+        let mut spilled_index = 0;
         for (formal, arg_register) in self.parameters.iter().zip(arg_registers) {
-            let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
-            start_statements.push(ir::Statement::Move {
-                dst: destination,
-                val: ir::Exp::Temp(arg_register),
-            });
+            match formal.access {
+                Access::Frame(_) => spilled_index += 1, // In frame variable will be keep in frame
+                Access::Register(_) => {
+                    let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
+                    start_statements.push(ir::Statement::Move {
+                        dst: destination,
+                        val: ir::Exp::Temp(arg_register),
+                    });
+                }
+            }
         }
         // save arguments from frame
-        for (index, formal) in self.parameters.iter().skip(arg_registers_len).enumerate() {
-            let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
-            start_statements.push(ir::Statement::Move {
-                dst: destination,
-                val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
-                    left: Box::new(ir::Exp::Temp(Self::fp())),
-                    op: ir::BinOp::Plus,
-                    right: Box::new(ir::Exp::Const(Self::word_size() * (index + 1) as i64)), // +1 to skip static_link
-                })),
-            });
+        for formal in self.parameters.iter().skip(arg_registers_len).rev() {
+            match formal.access {
+                Access::Frame(_) => spilled_index += 1, // In frame variable will be keep in frame
+                Access::Register(_) => {
+                    let destination = ir_gen::access_var(formal, ir::Exp::Temp(Self::fp()));
+                    start_statements.push(ir::Statement::Move {
+                        dst: destination,
+                        val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
+                            left: Box::new(ir::Exp::Temp(Self::fp())),
+                            op: ir::BinOp::Plus,
+                            right: Box::new(ir::Exp::Const(
+                                Self::word_size() * spilled_index as i64,
+                            )),
+                        })),
+                    });
+                    spilled_index += 1;
+                }
+            }
         }
 
+        // restore callee saved registers
         for (register, location) in Self::callee_saved_registers()
             .into_iter()
             .zip(saved_register_locations)
@@ -354,7 +370,7 @@ impl Frame for FrameAmd64 {
 
     fn proc_entry_exit3(&self, body: asm::Trace) -> asm::Trace {
         let stack_size = {
-            let size = -self.offset;
+            let size = -self.offset - WORD_SIZE; // remove static_link, it's on caller frame
             if size % 16 != 0 {
                 // Align the stack of 16 bytes according to x86_64 standard
                 (size & !0xF) + 0x10
@@ -372,7 +388,7 @@ impl Frame for FrameAmd64 {
         insts.push(asm::Instruction::Operation {
             assembly: "push `s0".to_string(),
             destination: vec![Self::rsp()],
-            source: vec![Self::rbp()],
+            source: vec![Self::rbp(), Self::rsp()],
             jump: None,
         });
         insts.push(asm::Instruction::Move {
@@ -380,12 +396,14 @@ impl Frame for FrameAmd64 {
             destination: vec![Self::rbp()],
             source: vec![Self::rsp()],
         });
-        insts.push(asm::Instruction::Operation {
-            assembly: format!("sub `d0, {}", stack_size),
-            destination: vec![Self::rsp()],
-            source: vec![],
-            jump: None,
-        });
+        if stack_size != 0 {
+            insts.push(asm::Instruction::Operation {
+                assembly: format!("sub `d0, {}", stack_size),
+                destination: vec![Self::rsp()],
+                source: vec![],
+                jump: None,
+            });
+        }
         let mut new_trace = Trace::new(body.done_label);
         new_trace.add_block(asm::Block::new(insts));
         new_trace.extend(body);

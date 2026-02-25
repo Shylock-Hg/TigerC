@@ -39,9 +39,10 @@ pub trait Frame {
     fn return_value() -> Temp;
     fn word_size() -> i64;
     fn colors() -> Vec<Temp>;
+    fn arg_registers() -> Vec<Temp>;
 
     fn name(&self) -> &Label;
-    fn parameters(&self) -> &[Variable];
+    fn parameters(&self) -> &[Variable]; // TODO: rename to formals
     fn allocate_local(&mut self, var: ir::Variable) -> Variable;
 
     fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement;

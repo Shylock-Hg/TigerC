@@ -288,6 +288,7 @@ fn clean(blocks: Vec<Block>) -> Vec<Block> {
         .collect::<Vec<_>>()
 }
 
+#[derive(Debug)]
 pub struct Trace {
     pub blocks: Vec<Block>,
 }
