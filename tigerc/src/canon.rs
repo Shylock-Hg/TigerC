@@ -134,6 +134,7 @@ fn concat(s1: ir::Statement, s2: ir::Statement) -> ir::Statement {
 }
 
 fn reorder2(exps: &[ir::Exp]) -> (ir::Statement, Vec<ir::Exp>) {
+    let len = exps.len();
     if exps.is_empty() {
         // empty parameter list
         return (ir_gen::no_op(), vec![]);
@@ -146,22 +147,22 @@ fn reorder2(exps: &[ir::Exp]) -> (ir::Statement, Vec<ir::Exp>) {
 
     let (stmt1, exp1) = lift_exq_seq_exp(exps[0].clone());
     let (stmt2, exp2) = reorder2(&exps[1..]);
-    if commute(&stmt2, &exp1) {
+    if !commute(&stmt2, &exp1) {
         let tp = ir::Exp::Temp(Temp::new());
         let mv = ir::Statement::Move {
             dst: tp.clone(),
             val: exp1,
         };
-        let stmt = concat(mv, stmt2);
+        let stmt = concat(stmt1, concat(mv, stmt2));
         let mut exps = vec![tp];
         exps.extend(exp2);
-        debug_assert!(exps.len() == exps.len());
+        debug_assert!(len == exps.len());
         (stmt, exps)
     } else {
         let stmt = concat(stmt1, stmt2);
         let mut exps = vec![exp1];
         exps.extend(exp2);
-        debug_assert!(exps.len() == exps.len());
+        debug_assert!(len == exps.len());
         (stmt, exps)
     }
 }
