@@ -7,6 +7,12 @@ use crate::ir::LowerIdent;
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Temp(LowerIdent);
 
+impl Default for Temp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Temp {
     pub fn new() -> Self {
         Temp(LowerIdent::new_anonymous())
@@ -30,6 +36,12 @@ impl ToString for Temp {
 // for function or code block location
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Label(LowerIdent);
+
+impl Default for Label {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Label {
     pub fn new() -> Self {

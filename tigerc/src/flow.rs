@@ -11,6 +11,12 @@ pub struct FlowGraph<'a> {
     graph: Graph<&'a Block>,
 }
 
+impl<'a> Default for FlowGraph<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> FlowGraph<'a> {
     pub fn new() -> Self {
         FlowGraph {
@@ -35,25 +41,25 @@ impl<'a> FlowGraph<'a> {
     }
 
     pub fn def(&self, block: &Entry, offset: usize) -> Vec<Temp> {
-        let block = self.graph.node(&block);
+        let block = self.graph.node(block);
         let inst = block.value().instructions.get(offset).unwrap();
         inst.def()
     }
 
     pub fn use_(&self, block: &Entry, offset: usize) -> Vec<Temp> {
-        let block = self.graph.node(&block);
+        let block = self.graph.node(block);
         let inst = block.value().instructions.get(offset).unwrap();
         inst.use_()
     }
 
     pub fn is_move(&self, block: &Entry, offset: usize) -> bool {
-        let block = self.graph.node(&block);
+        let block = self.graph.node(block);
         let inst = block.value().instructions.get(offset).unwrap();
         inst.is_move()
     }
 
     pub fn get(&self, block: &Entry) -> &Node<&'a Block> {
-        self.graph.node(&block)
+        self.graph.node(block)
     }
 }
 
@@ -70,7 +76,7 @@ pub fn flow_analyze<'a>(trace: &'a Trace) -> FlowGraph<'a> {
         let mut outcome = Vec::new();
         let last = block.last();
         match last {
-            &Instruction::Operation { ref jump, .. } => {
+            Instruction::Operation { jump, .. } => {
                 if let Some(labels) = jump {
                     for target in labels {
                         outcome.push(Entry(*index.get(target).unwrap()));
@@ -87,11 +93,11 @@ pub fn flow_analyze<'a>(trace: &'a Trace) -> FlowGraph<'a> {
     for block in &trace.blocks {
         let last = block.last();
         match last {
-            &Instruction::Operation { ref jump, .. } => {
+            Instruction::Operation { jump, .. } => {
                 if let Some(labels) = jump {
                     for target in labels {
                         flow_graph.add_income(
-                            &Entry(*index.get(&target).unwrap()),
+                            &Entry(*index.get(target).unwrap()),
                             Entry(*index.get(&block.start_label()).unwrap()),
                         );
                     }

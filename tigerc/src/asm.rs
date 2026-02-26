@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs::File, io::Write};
+use std::{fmt::Display, io::Write};
 
 use crate::temp::{Label, Temp};
 

@@ -32,7 +32,7 @@ impl<V, K> MultiMap<V, K> {
     {
         self.inner
             .entry(key)
-            .or_insert(Default::default())
+            .or_default()
             .push_back(value);
     }
 
@@ -52,6 +52,12 @@ enum StackRef<K = Symbol> {
 pub struct SymbolTable<T, K = Symbol> {
     map: MultiMap<T, K>,
     stack: Stack<StackRef<K>>,
+}
+
+impl<T, K> Default for SymbolTable<T, K> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T, K> SymbolTable<T, K> {

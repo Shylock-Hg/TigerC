@@ -7,7 +7,7 @@ pub enum Layout {
 impl Layout {
     pub fn size(&self) -> usize {
         match self {
-            Layout::String(l) => data_layout::STRING_HEADER_SIZE as usize + l + 1, // 1 for null
+            Layout::String(l) => data_layout::STRING_HEADER_SIZE + l + 1, // 1 for null
         }
     }
 }

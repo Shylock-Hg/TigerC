@@ -216,7 +216,7 @@ impl Block {
 
     pub fn start_label(&self) -> Label {
         match self.0.first().unwrap() {
-            ir::Statement::Label(l) => l.clone(),
+            ir::Statement::Label(l) => *l,
             _ => unreachable!(),
         }
     }
@@ -299,7 +299,7 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
         .iter()
         .enumerate()
         .map(|(i, b)| match b.0.first().unwrap() {
-            ir::Statement::Label(l) => (l.clone(), i),
+            ir::Statement::Label(l) => (*l, i),
             _ => unreachable!(),
         })
         .collect::<HashMap<_, _>>();

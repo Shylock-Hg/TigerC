@@ -1,5 +1,4 @@
 use std::{
-    backtrace::Backtrace,
     cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
@@ -88,9 +87,9 @@ impl<'a> Alloc<'a> {
         let mut simplify_work_list = vec![];
         let mut freeze_work_list = vec![];
         for n in initial {
-            if inter_g.degree(&n) >= k {
+            if inter_g.degree(n) >= k {
                 spill_work_list.push(*n);
-            } else if move_list.contains_key(&n) {
+            } else if move_list.contains_key(n) {
                 freeze_work_list.push(*n);
             } else {
                 simplify_work_list.push(*n);
@@ -210,11 +209,11 @@ impl<'a> Alloc<'a> {
                 .into_iter()
                 .map(|s| {
                     if self.spilled_nodes.contains(&s) {
-                        let new_source = gen.munch_expression(ir_gen::access_var(
+                        
+                        gen.munch_expression(ir_gen::access_var(
                             &temp_loc[&s],
                             ir::Exp::Temp(F::fp()),
-                        ));
-                        new_source
+                        ))
                     } else {
                         s
                     }
@@ -260,7 +259,7 @@ impl<'a> Alloc<'a> {
             }
         }
         for n in &self.coalesced_nodes {
-            self.color.insert(*n, self.color[&self.get_alias(&n)]);
+            self.color.insert(*n, self.color[&self.get_alias(n)]);
         }
     }
 
@@ -308,7 +307,7 @@ impl<'a> Alloc<'a> {
     fn freeze(&mut self) {
         let u = self.freeze_work_list.pop();
         if let Some(u) = u {
-            self.simplify_work_list.push(u.clone());
+            self.simplify_work_list.push(u);
             self.freeze_moves(&u);
         }
     }
@@ -363,7 +362,7 @@ impl<'a> Alloc<'a> {
                 // HINT: sometimes, this node is already in freeze_work_list or simplify_work_list
                 // but the degree increase in previous combine->add_edge
                 self.spill_work_list.remove(i);
-                if self.move_related(&u) {
+                if self.move_related(u) {
                     self.freeze_work_list.push(*u);
                 } else {
                     self.simplify_work_list.push(*u);
@@ -465,7 +464,7 @@ impl<'a> Alloc<'a> {
     fn node_moves(&self, t: &Temp) -> Vec<Move> {
         let wn = self.move_list.get(t).cloned().unwrap_or(vec![]);
         wn.into_iter()
-            .filter(|v| self.active_moves.contains(v) || self.worklist_moves.contains(&v))
+            .filter(|v| self.active_moves.contains(v) || self.worklist_moves.contains(v))
             .collect::<Vec<_>>()
     }
 

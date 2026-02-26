@@ -87,7 +87,7 @@ impl InterferenceGraph {
     pub fn pop_node(&mut self, t: &Temp) -> Neighbor {
         let node = self.g.remove(t).unwrap();
         for outcome in &node.outcome {
-            let neighbor = self.g.get_mut(&outcome).unwrap();
+            let neighbor = self.g.get_mut(outcome).unwrap();
             neighbor.outcome.retain(|v| v != t);
         }
         node

@@ -5,6 +5,12 @@ pub struct Stack<T> {
     list: LinkedList<T>,
 }
 
+impl<T> Default for Stack<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Stack<T> {
     pub fn new() -> Stack<T> {
         Stack {

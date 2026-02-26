@@ -9,6 +9,12 @@ pub struct Escape {
     e: Option<Rc<RefCell<bool>>>,
 }
 
+impl Default for Escape {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Escape {
     pub fn new() -> Self {
         Escape { e: None }

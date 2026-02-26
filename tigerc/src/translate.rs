@@ -143,6 +143,12 @@ pub struct Translate<F: Frame> {
     done_label: Stack<Label>,
 }
 
+impl<F: Frame + PartialEq + Eq> Default for Translate<F> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<F: Frame + PartialEq + Eq> Translate<F> {
     pub fn new() -> Self {
         Self {
@@ -190,7 +196,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         for i in 0..f.args.len() {
             let v = new_level.current.borrow().parameters()[i].clone();
             self.var_table.insert_symbol(
-                f.args.keys().nth(i).unwrap().clone(),
+                *f.args.keys().nth(i).unwrap(),
                 VarEntry {
                     level: new_level.clone(),
                     var: v,
@@ -223,7 +229,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             }
             _ => {
                 // In fact, all variables are WORD in tiger (integer or pointer)
-                let init_exp = self.translate_expr(&level, &v.init);
+                let init_exp = self.translate_expr(level, &v.init);
                 let assign = ir::Statement::Move {
                     dst: Self::translate_var(&var),
                     val: init_exp,
@@ -244,7 +250,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     fn translate_expr(&mut self, level: &Level<F>, expr: &type_ast::TypeExpr) -> ir::Exp {
         match &expr.expr {
             type_ast::TypeExpr_::Literal(l) => self.translate_value(l),
-            type_ast::TypeExpr_::LeftValue(l) => self.translate_left_value(level, &l),
+            type_ast::TypeExpr_::LeftValue(l) => self.translate_left_value(level, l),
             type_ast::TypeExpr_::Sequence(seq) => {
                 // by syntax
                 assert!(seq.len() >= 2);
@@ -274,9 +280,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         let decls = let_
             .decls
             .iter()
-            .map(|d| self.translate_decl(level, d))
-            .filter(|v| v.is_some())
-            .map(|v| v.unwrap())
+            .filter_map(|d| self.translate_decl(level, d))
             .collect();
         let stmt = ir_gen::combine_statements(decls);
         let seq = self.translate_seq(level, &let_.sequence);
@@ -750,7 +754,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::LeftValue_::Variable(v) => self.translate_simple_var(*v, level),
             type_ast::LeftValue_::Field(l, f) => {
                 // lv is pointer to record
-                let lv = self.translate_left_value(level, &l);
+                let lv = self.translate_left_value(level, l);
                 let offset = if let type_ast::Type::Record(r) = &l.ty {
                     let offset = r.fields.get_index_of(f).unwrap() as i64 * F::word_size();
                     ir::Exp::Const(offset)
@@ -793,8 +797,8 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                 Self::translate_access_var(level.current.borrow().parameters().last().unwrap(), fp);
             level = level.parent.as_ref().unwrap();
         }
-        let exp = Self::translate_access_var(&var.var, fp);
-        exp
+        
+        Self::translate_access_var(&var.var, fp)
     }
 
     fn translate_var(var: &frame::Variable) -> ir::Exp {

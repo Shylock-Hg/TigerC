@@ -33,7 +33,7 @@ impl LowerIdent {
 impl Display for LowerIdent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LowerIdent::Number(number) => write!(f, "{}_{}", "__anon", number),
+            LowerIdent::Number(number) => write!(f, "__anon_{}", number),
             LowerIdent::Name(symbol) => write!(f, "{}", symbol),
         }
     }

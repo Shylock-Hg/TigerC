@@ -184,7 +184,7 @@ impl<'a> Parser<'a> {
                         self.bump();
                         return v;
                     } else {
-                        Self::unexpected_token(&look);
+                        Self::unexpected_token(look);
                     }
                 }
             }
@@ -488,10 +488,10 @@ impl<'a> Parser<'a> {
     fn parse_decl(&mut self) -> Result<ast::Decl> {
         let current = self.look().unwrap();
         match current.node() {
-            Token::Ident(s) => match s {
-                &kw::TOK_TYPE => Ok(ast::Decl::Type(self.parse_type_decl())),
-                &kw::TOK_VAR => Ok(ast::Decl::Var(self.parse_var_decl())),
-                &kw::TOK_FUNCTION => Ok(ast::Decl::Func(self.parse_function_decl())),
+            Token::Ident(s) => match *s {
+                kw::TOK_TYPE => Ok(ast::Decl::Type(self.parse_type_decl())),
+                kw::TOK_VAR => Ok(ast::Decl::Var(self.parse_var_decl())),
+                kw::TOK_FUNCTION => Ok(ast::Decl::Func(self.parse_function_decl())),
                 _ => Err(ParserError::unexpected_token(current)),
             },
             _ => Err(ParserError::unexpected_token(current)),

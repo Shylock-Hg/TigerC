@@ -45,6 +45,12 @@ pub struct Graph<T> {
     nodes: Vec<Node<T>>,
 }
 
+impl<T> Default for Graph<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Graph<T> {
     pub fn new() -> Self {
         Self { nodes: Vec::new() }
@@ -66,7 +72,7 @@ impl<T> Graph<T> {
         self.nodes
             .iter()
             .position(|v| *v.value() == *t)
-            .map(|v| Entry(v))
+            .map(Entry)
     }
 
     pub fn node(&self, entry: &Entry) -> &Node<T> {
@@ -96,12 +102,12 @@ impl<T> Graph<T> {
     pub fn pop_node(&mut self, entry: &Entry) -> Node<T> {
         let node = self.nodes.remove(entry.0);
         for outcome in &node.outcome {
-            let neighbor = self.mut_node(&outcome);
+            let neighbor = self.mut_node(outcome);
             neighbor.income.retain(|v| v != entry);
             neighbor.outcome.retain(|v| v != entry);
         }
         for income in &node.income {
-            let neighbor = self.mut_node(&income);
+            let neighbor = self.mut_node(income);
             neighbor.income.retain(|v| v != entry);
             neighbor.outcome.retain(|v| v != entry);
         }

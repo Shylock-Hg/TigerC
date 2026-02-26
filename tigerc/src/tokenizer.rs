@@ -305,7 +305,6 @@ impl cursor::Cursor<'_> {
                 }
                 _ => {
                     if escape {
-                        escape = false;
                         panic!("Can't escape: {}", self.first());
                     } else {
                         buf.push(self.bump().unwrap());

@@ -120,6 +120,12 @@ pub struct TypeInference {
     variable_symbol_table: SymbolTable<SymbolValue>,
 }
 
+impl Default for TypeInference {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TypeInference {
     pub fn external_function() -> Vec<(Symbol, type_ast::Type)> {
         vec![
@@ -339,7 +345,7 @@ impl TypeInference {
             }
             ast::Expr::Unary(unary) => match &unary {
                 &ast::Unary::Negative(e) => {
-                    let ty_sub_expr = self.infer_expr(&e)?;
+                    let ty_sub_expr = self.infer_expr(e)?;
                     if !matches!(ty_sub_expr.ty, type_ast::Type::Int) {
                         Err(InferError::new(format!(
                             "Expect int type for negative, got {:?}.",
@@ -397,7 +403,7 @@ impl TypeInference {
             ast::Expr::FuncCall(f, args) => {
                 let ty_func = self
                     .variable_symbol_table
-                    .get_symbol(&f)
+                    .get_symbol(f)
                     .unwrap()
                     .ty
                     .clone();
@@ -456,11 +462,11 @@ impl TypeInference {
                                 f, ef,
                             )));
                         }
-                        let ty_arg = self.infer_expr(&ee)?;
+                        let ty_arg = self.infer_expr(ee)?;
                         if t != &ty_arg.ty {
                             if let type_ast::Type::Name(n) = t {
                                 let t = self.type_symbol_table.get_symbol(n).unwrap().ty.clone();
-                                if &t != &ty_arg.ty {
+                                if t != ty_arg.ty {
                                     return Err(InferError::new(format!(
                                         "Expect {:?} type for field {}, got {:?}.",
                                         t, f, ty_arg.ty,
@@ -698,7 +704,7 @@ impl TypeInference {
             ast::LeftValue::Variable(v) => {
                 let ty = self
                     .variable_symbol_table
-                    .get_symbol(&v)
+                    .get_symbol(v)
                     .unwrap()
                     .ty
                     .clone();

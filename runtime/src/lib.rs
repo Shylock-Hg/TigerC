@@ -39,9 +39,7 @@ use tiger_c::data_layout;
 use std::ffi::CStr;
 //use std::process;
 use std::io::{stdin, stdout, Read, Write};
-use std::mem;
-use std::os::raw::{c_char, c_void};
-use std::ptr;
+use std::os::raw::c_char;
 
 use data_layout::STRING_HEADER_SIZE;
 

@@ -1,6 +1,6 @@
 use std::{
     io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::FromStr,
 };
 
@@ -82,7 +82,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
 
     writeln!(output_asm_f, "section .text").unwrap();
     fragments.into_iter().for_each(|f| match f {
-        canon::Fragment::Function { label, frame, body } => {
+        canon::Fragment::Function { label: _, frame, body } => {
             let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(body.1);
             gen.munch_trace(body.0);
             let mut trace = gen.result();
@@ -133,7 +133,7 @@ fn link(obj: &str) {
         .arg(obj)
         .arg("../target/debug/libruntime.a")
         .arg("-o")
-        .arg(format!("{}", exec.to_str().unwrap()))
+        .arg(exec.to_str().unwrap())
         .output()
         .unwrap();
     if !ret.status.success() {
