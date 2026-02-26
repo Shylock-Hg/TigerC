@@ -42,7 +42,7 @@ pub trait Frame {
     fn arg_registers() -> Vec<Temp>;
 
     fn name(&self) -> &Label;
-    fn parameters(&self) -> &[Variable]; // TODO: rename to formals
+    fn parameters(&self) -> &[Variable];
     fn allocate_local(&mut self, var: ir::Variable) -> Variable;
 
     fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement;
