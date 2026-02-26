@@ -198,3 +198,13 @@ extern fn _start() {
     }
     process::exit(0);
 }*/
+
+const MAX_ALIGN: usize = 16; // max align for general allocation in x86_64
+
+// Just a simple wrap to avoid libc malloc
+#[unsafe(no_mangle)]
+extern "C" fn talloc(size: i64) -> i64 {
+    assert!(size > 0);
+    let layout = std::alloc::Layout::from_size_align(size as usize, MAX_ALIGN).unwrap();
+    unsafe { std::alloc::alloc(layout) as i64 }
+}

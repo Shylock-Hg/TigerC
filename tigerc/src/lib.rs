@@ -1,4 +1,8 @@
-use std::io::Write;
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use translate::Fragment;
 
@@ -95,6 +99,10 @@ pub fn compile_file(f: &str, output_asm: &str) {
 
     output_asm_f.flush().unwrap();
     nasm(output_asm);
+
+    let mut obj = PathBuf::from_str(output_asm).unwrap();
+    obj.set_extension("o");
+    link(obj.to_str().unwrap());
 }
 
 fn nasm(asm: &str) {
@@ -102,14 +110,37 @@ fn nasm(asm: &str) {
         .arg("-f")
         .arg("elf64")
         .arg(asm)
-        .status()
+        .output()
         .unwrap();
-    if !ret.success() {
-        panic!("{}", ret);
+    if !ret.status.success() {
+        panic!(
+            "{}, {}",
+            String::from_utf8_lossy(&ret.stdout),
+            String::from_utf8_lossy(&ret.stderr)
+        );
     }
 }
 
 // de-escape
 fn to_nasm(s: &str) -> String {
     tokenizer::de_escape(s)
+}
+
+fn link(obj: &str) {
+    let mut exec = PathBuf::from_str(obj).unwrap();
+    exec.set_extension("t");
+    let ret = std::process::Command::new("gcc")
+        .arg(obj)
+        .arg("../target/debug/libruntime.a")
+        .arg("-o")
+        .arg(format!("{}", exec.to_str().unwrap()))
+        .output()
+        .unwrap();
+    if !ret.status.success() {
+        panic!(
+            "{}, {}",
+            String::from_utf8_lossy(&ret.stdout),
+            String::from_utf8_lossy(&ret.stderr)
+        );
+    }
 }

@@ -164,9 +164,9 @@ impl TypeInference {
                 }),
             ),
             (
-                ident_pool::symbol("malloc"),
+                ident_pool::symbol("talloc"),
                 type_ast::Type::Function(type_ast::Function {
-                    name: ident_pool::symbol("malloc"),
+                    name: ident_pool::symbol("talloc"),
                     params: vec![type_ast::Type::Int],
                     return_ty: Box::new(type_ast::Type::Int),
                 }),

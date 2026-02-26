@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use std::hash::Hash;
+use std::sync::atomic::AtomicUsize;
 
 use crate::ident_pool::Symbol;
 use crate::temp::{Label, Temp};
@@ -17,12 +18,11 @@ pub enum LowerIdent {
 
 impl LowerIdent {
     pub fn new_anonymous() -> LowerIdent {
-        // It's safe in single thread
-        static mut COUNTER: usize = 0;
-        LowerIdent::Number(unsafe {
-            COUNTER += 1;
-            COUNTER
-        })
+        // cargo test will run test concurrency so we use atomic here
+        // TODO: Put this counter to Context of once compilation to keep stability of inner id number?
+        // and about id number of symbol?
+        static COUNTER: AtomicUsize = AtomicUsize::new(0);
+        LowerIdent::Number(COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
     }
 
     pub fn new_named(name: Symbol) -> LowerIdent {

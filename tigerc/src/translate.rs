@@ -608,7 +608,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
 
     fn malloc(size: ir::Exp) -> ir::Exp {
         let args = vec![size];
-        Self::translate_function_call(ident_pool::symbol("malloc"), args)
+        Self::translate_function_call(ident_pool::symbol("talloc"), args)
     }
 
     fn translate_record_ctor(&mut self, level: &Level<F>, r: &type_ast::RecordExpr) -> ir::Exp {

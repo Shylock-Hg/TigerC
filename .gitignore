@@ -1,3 +1,4 @@
 /target
-tigerc/tests/testcases/*.S
+tigerc/tests/testcases/*.s
 tigerc/tests/testcases/*.o
+tigerc/tests/testcases/*.t
