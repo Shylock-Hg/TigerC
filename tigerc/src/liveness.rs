@@ -49,26 +49,39 @@ pub struct Neighbor {
 
 #[derive(Clone)]
 pub struct InterferenceGraph {
-    pub g: HashMap<Temp, Neighbor>,
+    pub adj_set: HashSet<(Temp, Temp)>,
+    pub adj_list: HashMap<Temp, Vec<Temp>>,
+    pub degree: HashMap<Temp, usize>,
 }
 
 impl InterferenceGraph {
-    pub fn add_interference(&mut self, a: Temp, b: Temp) {
-        self.g
-            .entry(a)
-            .and_modify(|v| v.outcome.push(b))
-            .or_insert(Neighbor { outcome: vec![b] });
-        self.g
-            .entry(b)
-            .and_modify(|v| v.outcome.push(a))
-            .or_insert(Neighbor { outcome: vec![a] });
+    pub fn new() -> Self {
+        InterferenceGraph {
+            adj_set: HashSet::new(),
+            adj_list: HashMap::new(),
+            degree: HashMap::new(),
+        }
     }
 
-    pub fn add_interference_to(&mut self, a: Temp, b: Temp) {
-        self.g
-            .entry(a)
-            .and_modify(|v| v.outcome.push(b))
-            .or_insert(Neighbor { outcome: vec![b] });
+    pub fn add_edge(&mut self, a: Temp, b: Temp, precolored: &Vec<Temp>) {
+        if !self.adj_set.contains(&(a, b)) && a != b {
+            self.adj_set.insert((a, b));
+            self.adj_set.insert((b, a));
+            if !precolored.contains(&a) {
+                self.degree.entry(a).and_modify(|v| *v += 1).or_insert(1);
+                self.adj_list
+                    .entry(a)
+                    .and_modify(|v| v.push(b))
+                    .or_insert(vec![b]);
+            }
+            if !precolored.contains(&b) {
+                self.degree.entry(b).and_modify(|v| *v += 1).or_insert(1);
+                self.adj_list
+                    .entry(b)
+                    .and_modify(|v| v.push(a))
+                    .or_insert(vec![a]);
+            }
+        };
     }
 
     //    fn add_move(&mut self, mv: Move) {
@@ -78,33 +91,6 @@ impl InterferenceGraph {
     //pub fn neighbor_mut(&mut self, t: &Temp) -> &mut Neighbor {
     //self.g.get_mut(t).unwrap()
     //}
-
-    pub fn degree(&self, t: &Temp) -> usize {
-        let node = self.g.get(t).unwrap();
-        node.outcome.len()
-    }
-
-    pub fn pop_node(&mut self, t: &Temp) -> Neighbor {
-        let node = self.g.remove(t).unwrap();
-        for outcome in &node.outcome {
-            let neighbor = self.g.get_mut(outcome).unwrap();
-            neighbor.outcome.retain(|v| v != t);
-        }
-        node
-    }
-
-    pub fn node(&self, t: &Temp) -> &Neighbor {
-        self.g.get(t).unwrap()
-    }
-
-    pub fn is_interfered(&self, a: &Temp, b: &Temp) -> bool {
-        let an = self.node(a);
-        an.outcome.contains(b)
-    }
-
-    pub fn iter(&self) -> Iter<'_, Temp, Neighbor> {
-        self.g.iter()
-    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -125,7 +111,7 @@ pub fn liveness_analyze<'a, F: Frame>(
     let mut current = HashSet::<Temp>::new();
     build_live_map(flow, done_node, &mut live_map, &mut visited, &mut current);
     let live_map = live_map; // avoid modify
-    let mut iter_g = InterferenceGraph { g: HashMap::new() };
+    let mut iter_g = InterferenceGraph::new();
     let mut work_list_moves = Vec::<Move>::new();
     let mut move_list = HashMap::<Temp, Vec<Move>>::new();
     let mut visited = HashSet::<Entry>::new();
@@ -159,17 +145,9 @@ fn build_iterference_graph<'a, F: Frame>(
         for def in inst.def() {
             for b in live_map.get(&ProgramPoint { block, offset }).unwrap() {
                 // an optimization for move
-                if
                 // FIXME: this lead node outside of interference graph?
                 /* !(inst.is_move() && use_.contains(b)) && */
-                def != *b {
-                    if !precolored.contains(&def) {
-                        iter_g.add_interference(def, *b);
-                    }
-                    if !precolored.contains(b) {
-                        iter_g.add_interference(*b, def);
-                    }
-                }
+                iter_g.add_edge(def, *b, &precolored);
             }
             for u in use_.iter() {
                 if inst.is_move() {

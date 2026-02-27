@@ -181,7 +181,7 @@ impl Display for Trace {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ident_pool, temp::Temp};
+    use crate::{ident_pool, ir::LowerIdent, temp::Temp};
 
     use super::Instruction;
 
@@ -194,6 +194,17 @@ mod tests {
         };
         let result = inst.instance();
         assert_eq!(result, "mov rax rsp");
+    }
+
+    #[test]
+    fn test_address() {
+        let inst = Instruction::Move {
+            assembly: "mov `d0 [`s0]".to_string(),
+            destination: vec![Temp::new_debug(LowerIdent::Number(234))],
+            source: vec![Temp::new_debug(LowerIdent::Number(233))],
+        };
+        let result = inst.instance();
+        assert_eq!(result, "mov __anon_234 [__anon_233]");
     }
 
     #[test]

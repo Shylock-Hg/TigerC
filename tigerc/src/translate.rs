@@ -480,57 +480,77 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     fn translate_array_ctor(&mut self, level: &Level<F>, a: &type_ast::ArrayExpr) -> ir::Exp {
         let len = self.translate_expr(level, &a.len);
         let len_temp = ir::Exp::Temp(Temp::new());
-        let len_stmt = ir::Statement::Move {
+        let stmt = ir::Statement::Move {
             dst: len_temp.clone(),
             val: len,
         };
         let size = ir::Exp::BinOp {
-            op: ir::BinOp::Multiply,
-            left: Box::new(len_temp.clone()),
-            right: Box::new(ir::Exp::Const(F::word_size())),
+            op: ir::BinOp::Plus,
+            left: Box::new(ir::Exp::BinOp {
+                op: ir::BinOp::Multiply,
+                left: Box::new(len_temp.clone()),
+                right: Box::new(ir::Exp::Const(F::word_size())),
+            }),
+            right: Box::new(ir::Exp::Const(data_layout::ARRAY_HEADER_SIZE as i64)),
         };
         let pt = Self::malloc(size);
         let p = ir::Exp::Temp(Temp::new());
-        let len_stmt = ir::Statement::Seq {
-            s1: Box::new(len_stmt),
-            s2: Box::new(ir::Statement::Move {
+        let stmt = ir::concat(
+            stmt,
+            ir::Statement::Move {
                 dst: p.clone(),
                 val: pt,
-            }),
-        };
+            },
+        );
 
         let init = self.translate_expr(level, &a.init);
         let init_temp = ir::Exp::Temp(Temp::new());
-        let init_stmt = ir::Statement::Move {
-            dst: init_temp.clone(),
-            val: init,
-        };
+        let stmt = ir::concat(
+            stmt,
+            ir::Statement::Move {
+                dst: init_temp.clone(),
+                val: init,
+            },
+        );
 
         let iter = Temp::new();
         let fill = ir::Statement::Move {
             dst: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
                 op: ir::BinOp::Plus,
-                left: Box::new(p.clone()),
-                right: Box::new(ir::Exp::Temp(iter)),
+                left: Box::new(ir::Exp::BinOp {
+                    op: ir::BinOp::Plus,
+                    left: Box::new(p.clone()),
+                    right: Box::new(ir::Exp::Const(data_layout::ARRAY_HEADER_SIZE as i64)),
+                }),
+                right: Box::new(ir::Exp::BinOp {
+                    op: ir::BinOp::Multiply,
+                    left: Box::new(ir::Exp::Temp(iter.clone())),
+                    right: Box::new(ir::Exp::Const(F::word_size())),
+                }),
             })),
             val: init_temp,
         };
 
-        let stmt = ir::Statement::Seq {
-            s1: Box::new(init_stmt),
-            s2: Box::new(len_stmt),
-        };
+        // fill array content
+        let loop_ = Self::for_loop(
+            iter,
+            ir::Exp::Const(0),
+            len_temp.clone(),
+            fill,
+            Label::new(),
+        );
 
-        let loop_ = Self::for_loop(Temp::new(), ir::Exp::Const(0), len_temp, fill, Label::new());
+        // fill array length
+        let stmt = ir::concat(
+            stmt,
+            ir::Statement::Move {
+                dst: ir::Exp::Mem(Box::new(p.clone())),
+                val: len_temp.clone(),
+            },
+        );
 
-        let stmt = ir::Statement::Seq {
-            s1: Box::new(stmt),
-            s2: Box::new(loop_),
-        };
-        ir::Exp::ExpSeq {
-            stmt: Box::new(stmt),
-            exp: Box::new(p),
-        }
+        let stmt = ir::concat(stmt, loop_);
+        ir::concat_stmt_exp(stmt, p)
     }
 
     fn for_loop(
@@ -797,7 +817,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                 Self::translate_access_var(level.current.borrow().parameters().last().unwrap(), fp);
             level = level.parent.as_ref().unwrap();
         }
-        
+
         Self::translate_access_var(&var.var, fp)
     }
 

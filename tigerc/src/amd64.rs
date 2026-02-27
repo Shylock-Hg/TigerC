@@ -354,8 +354,19 @@ impl Frame for FrameAmd64 {
     }
 
     fn proc_entry_exit2(&self, mut insts: Vec<asm::Instruction>) -> Vec<asm::Instruction> {
+        // keep these registers live at begin of procedure
+        insts.insert(
+            1, // skip the label
+            asm::Instruction::Operation {
+                assembly: "".to_string(),
+                destination: vec![Self::fp(), Self::sp()],
+                source: vec![],
+                jump: None,
+            },
+        );
+
         // keep these registers until here
-        let mut save = vec![Self::sp(), Self::return_value()];
+        let mut save = vec![Self::sp(), Self::fp(), Self::return_value()];
         save.extend(Self::callee_saved_registers());
         let inst = asm::Instruction::Operation {
             assembly: "".to_string(),

@@ -55,7 +55,6 @@ impl<F: Frame> Gen<F> {
         match s {
             ir::Statement::Move { dst, val } => {
                 let inst = match (dst, val) {
-                    (ir::Exp::Mem(..), ir::Exp::Mem(..)) => unreachable!(),
                     (ir::Exp::Mem(dst), val) => {
                         let val_temp = self.munch_expression(val);
                         let dst_temp = self.munch_expression(*dst);

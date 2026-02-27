@@ -42,29 +42,7 @@ struct Alloc<'a> {
     colors: Vec<Temp>,
 }
 
-fn adj_set_of_inter_graph(inter_g: &InterferenceGraph) -> HashSet<(Temp, Temp)> {
-    let mut res = HashSet::new();
-    inter_g.iter().for_each(|(t, n)| {
-        n.outcome.iter().for_each(|v| {
-            res.insert((*t, *v));
-            res.insert((*v, *t));
-        });
-    });
-    res
-}
-
-fn adj_list_of_inter_graph(inter_g: &InterferenceGraph) -> HashMap<Temp, Vec<Temp>> {
-    inter_g
-        .iter()
-        .map(|(t, n)| (*t, n.outcome.clone()))
-        .collect()
-}
-
-fn degree_of_inter_graph<F: Frame>(inter_g: &InterferenceGraph) -> HashMap<Temp, usize> {
-    let mut degree = inter_g
-        .iter()
-        .map(|(t, n)| (*t, n.outcome.len()))
-        .collect::<HashMap<Temp, usize>>();
+fn degree_of_inter_graph<F: Frame>(mut degree: HashMap<Temp, usize>) -> HashMap<Temp, usize> {
     degree.extend(F::colors().into_iter().map(|v| (v, usize::max_value())));
     degree
 }
@@ -79,6 +57,7 @@ impl<'a> Alloc<'a> {
         let colors = F::colors();
         let k = colors.len();
         let initial = inter_g
+            .degree
             .iter()
             .map(|(k, _)| k)
             .filter(|v| !colors.contains(v))
@@ -87,7 +66,7 @@ impl<'a> Alloc<'a> {
         let mut simplify_work_list = vec![];
         let mut freeze_work_list = vec![];
         for n in initial {
-            if inter_g.degree(n) >= k {
+            if inter_g.degree[n] >= k {
                 spill_work_list.push(*n);
             } else if move_list.contains_key(n) {
                 freeze_work_list.push(*n);
@@ -110,10 +89,10 @@ impl<'a> Alloc<'a> {
             frozen_moves: Vec::<Move>::new(),
             worklist_moves: work_list_moves,
             active_moves: Vec::<Move>::new(),
-            adj_set: adj_set_of_inter_graph(&inter_g),
-            adj_list: adj_list_of_inter_graph(&inter_g),
+            adj_set: inter_g.adj_set,
+            adj_list: inter_g.adj_list,
             color: F::colors().into_iter().map(|v| (v, v)).collect(),
-            degree: degree_of_inter_graph::<F>(&inter_g),
+            degree: degree_of_inter_graph::<F>(inter_g.degree),
             alias: HashMap::new(),
             move_list,
             flow,
@@ -209,7 +188,6 @@ impl<'a> Alloc<'a> {
                 .into_iter()
                 .map(|s| {
                     if self.spilled_nodes.contains(&s) {
-                        
                         gen.munch_expression(ir_gen::access_var(
                             &temp_loc[&s],
                             ir::Exp::Temp(F::fp()),

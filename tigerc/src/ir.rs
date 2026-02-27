@@ -124,3 +124,17 @@ pub enum CompareOp {
     UnsignedLt,
     UnsignedLe,
 }
+
+pub fn concat(s1: Statement, s2: Statement) -> Statement {
+    Statement::Seq {
+        s1: Box::new(s1),
+        s2: Box::new(s2),
+    }
+}
+
+pub fn concat_stmt_exp(stmt: Statement, exp: Exp) -> Exp {
+    Exp::ExpSeq {
+        stmt: Box::new(stmt),
+        exp: Box::new(exp),
+    }
+}

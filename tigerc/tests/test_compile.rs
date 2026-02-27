@@ -13,6 +13,15 @@ mod test {
     fn test_compile2() {
         let path = "tests/testcases/queens.tig";
         compile_file(path, "tests/testcases/queens.s");
+        let output = std::process::Command::new("./tests/testcases/queens.t")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}, {}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     #[test]

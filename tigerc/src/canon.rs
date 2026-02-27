@@ -111,11 +111,11 @@ fn lift_exq_seq_exp(exp: ir::Exp) -> (ir::Statement, ir::Exp) {
                 dst: tp.clone(),
                 val: m,
             };
-            (concat(stmt, mv), tp.clone())
+            (concat(stmt, mv), ir::Exp::Mem(Box::new(tp.clone())))
         }
         ir::Exp::Call { func, args } => {
             let (stmt, args) = reorder2(&args);
-            let call = ir::Exp::Call { func, args };
+            let call = ir::Exp::Call { func, args }; // FIXME: lift func exp?
             (stmt, call)
         }
         ir::Exp::ExpSeq { stmt, exp } => {
