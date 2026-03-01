@@ -236,6 +236,7 @@ impl<'a> Alloc<'a> {
                 self.color.insert(n, colors.pop().unwrap());
             }
         }
+
         for n in &self.coalesced_nodes {
             self.color.insert(*n, self.color[&self.get_alias(n)]);
         }
@@ -266,7 +267,7 @@ impl<'a> Alloc<'a> {
             if u == v {
                 self.coalesced_moves.push(m);
                 self.add_work_list(u);
-            } else if self.precolored.contains(&v) && self.adj_set.contains(&(u, v)) {
+            } else if self.precolored.contains(&v) || self.adj_set.contains(&(u, v)) {
                 self.constrained_moves.push(m);
                 self.add_work_list(u);
                 self.add_work_list(v);

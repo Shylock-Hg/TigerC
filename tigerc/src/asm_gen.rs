@@ -289,7 +289,7 @@ impl<F: Frame> Gen<F> {
                 let inst = asm::Instruction::Operation {
                     assembly: assembly.to_string(),
                     destination: vec![temp],
-                    source: vec![right_temp],
+                    source: vec![right_temp, temp],
                     jump: None,
                 };
                 self.emit(inst);
