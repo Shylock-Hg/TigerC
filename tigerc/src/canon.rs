@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::vec;
 use std::{collections::HashMap, mem::swap};
 
+use crate::ir::CompareOp;
 use crate::{
     frame::Frame,
     ir, ir_gen,
@@ -365,18 +366,14 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
                 // TODO maybe we can merge block if next block be only jumped from this
             }
             ir::Statement::CJump {
-                left,
-                right,
-                then,
-                else_,
-                ..
+                op, then, else_, ..
             } => {
                 if let Some(next) = next {
                     let next_block = &blocks[*next];
                     if let ir::Statement::Label(label) = next_block.0.first().unwrap() {
                         if label == then {
                             // reverse condition, keep else branch be successor
-                            swap(left, right);
+                            *op = negative_cmp_op(*op);
                             swap(then, else_);
                         } else if label == else_ {
                             // do nothing
@@ -408,5 +405,20 @@ fn debug_trace(blocks: &Vec<Block>, traces: &Vec<usize>) {
     println!("trace:");
     for i in traces {
         println!("{:#?}", blocks[*i].0);
+    }
+}
+
+fn negative_cmp_op(op: CompareOp) -> CompareOp {
+    match op {
+        CompareOp::Eq => CompareOp::Ne,
+        CompareOp::Ne => CompareOp::Eq,
+        CompareOp::SignedGt => CompareOp::SignedLe,
+        CompareOp::SignedGe => CompareOp::SignedLt,
+        CompareOp::SignedLt => CompareOp::SignedGe,
+        CompareOp::SignedLe => CompareOp::SignedGt,
+        CompareOp::UnsignedGt => CompareOp::UnsignedLe,
+        CompareOp::UnsignedGe => CompareOp::UnsignedLt,
+        CompareOp::UnsignedLt => CompareOp::UnsignedGe,
+        CompareOp::UnsignedLe => CompareOp::UnsignedGt,
     }
 }

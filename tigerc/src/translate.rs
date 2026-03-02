@@ -585,8 +585,8 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             },
         };
         let body = ir::Statement::Seq {
-            s1: Box::new(inc_var),
-            s2: Box::new(body),
+            s1: Box::new(body),
+            s2: Box::new(inc_var),
         };
         let loop_ = Self::while_loop(test, body, test_label, done_label, body_label);
         ir::Statement::Seq {

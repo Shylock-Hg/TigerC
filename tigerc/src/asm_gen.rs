@@ -119,14 +119,14 @@ impl<F: Frame> Gen<F> {
                 let opcode = match op {
                     ir::CompareOp::Eq => "je",
                     ir::CompareOp::Ne => "jne",
-                    ir::CompareOp::SignedGt => "jl",
-                    ir::CompareOp::SignedGe => "jle",
-                    ir::CompareOp::SignedLt => "jg",
-                    ir::CompareOp::SignedLe => "jge",
-                    ir::CompareOp::UnsignedGt => "jb",
-                    ir::CompareOp::UnsignedGe => "jbe",
-                    ir::CompareOp::UnsignedLt => "ja",
-                    ir::CompareOp::UnsignedLe => "jae",
+                    ir::CompareOp::SignedGt => "jg",
+                    ir::CompareOp::SignedGe => "jge",
+                    ir::CompareOp::SignedLt => "jl",
+                    ir::CompareOp::SignedLe => "jle",
+                    ir::CompareOp::UnsignedGt => "ja",
+                    ir::CompareOp::UnsignedGe => "jae",
+                    ir::CompareOp::UnsignedLt => "jb",
+                    ir::CompareOp::UnsignedLe => "jbe",
                 };
                 let inst = asm::Instruction::Operation {
                     assembly: std::format!("{} {}", opcode, then),

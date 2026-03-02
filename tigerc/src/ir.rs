@@ -111,7 +111,7 @@ pub enum Statement {
     Label(Label),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum CompareOp {
     Eq,
     Ne,
