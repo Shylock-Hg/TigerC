@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::vec;
 use std::{collections::HashMap, mem::swap};
 
+use crate::ir::concat;
 use crate::ir::CompareOp;
 use crate::{
     frame::Frame,
@@ -124,13 +125,6 @@ fn lift_exq_seq_exp(exp: ir::Exp) -> (ir::Statement, ir::Exp) {
             let (stmt2, exp) = lift_exq_seq_exp(*exp);
             (concat(stmt, stmt2), exp)
         }
-    }
-}
-
-fn concat(s1: ir::Statement, s2: ir::Statement) -> ir::Statement {
-    ir::Statement::Seq {
-        s1: Box::new(s1),
-        s2: Box::new(s2),
     }
 }
 
