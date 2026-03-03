@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Iter, HashMap, HashSet},
+    collections::{hash_map::Iter, HashMap, HashSet, VecDeque},
     hash::Hash,
     ptr,
 };
@@ -9,6 +9,7 @@ use crate::{
     flow::FlowGraph,
     frame::Frame,
     graph::{Entry, Node},
+    ir::LowerIdent,
     symbol_table::SymbolTable,
     temp::{Label, Temp},
 };
@@ -107,9 +108,7 @@ pub fn liveness_analyze<'a, F: Frame>(
     let done_node = flow.done_node();
     assert!(done_node.value().start_label() == done_label);
     assert!(done_node.outcome().is_empty());
-    let mut visited = SymbolTable::<(), Entry>::new();
-    let mut current = HashSet::<Temp>::new();
-    build_live_map(flow, done_node, &mut live_map, &mut visited, &mut current);
+    build_live_map_loop(flow, &mut live_map);
     let live_map = live_map; // avoid modify
     let mut iter_g = InterferenceGraph::new();
     let mut work_list_moves = Vec::<Move>::new();
@@ -183,11 +182,24 @@ fn build_iterference_graph<'a, F: Frame>(
     }
 }
 
+fn build_live_map_loop<'a>(
+    flow: &'a FlowGraph,
+    live_map: &mut HashMap<ProgramPoint<'a>, HashSet<Temp>>,
+) {
+    // We will analyze live map from each block, this won't lose any block even with circle
+    // TODO: But is it complete?
+    for node in flow.nodes() {
+        let mut visited = HashSet::new();
+        let mut current = HashSet::new();
+        build_live_map(flow, node, live_map, &mut visited, &mut current);
+    }
+}
+
 fn build_live_map<'a>(
     flow: &'a FlowGraph,
     node: &Node<&'a asm::Block>,
     live_map: &mut HashMap<ProgramPoint<'a>, HashSet<Temp>>,
-    visited: &mut SymbolTable<(), Entry>,
+    visited: &mut HashSet<Entry>,
     current: &mut HashSet<Temp>,
 ) {
     // reverse iterate flow
@@ -206,15 +218,12 @@ fn build_live_map<'a>(
             .or_insert(current.clone());
     }
     for income in node.income() {
-        if visited.get_symbol(income).is_some() {
-            // the done block will never be re-visited, so we don't need to check it
+        if visited.contains(income) {
             continue;
         }
-        visited.begin_scope();
-        visited.insert_symbol(*income, ());
+        visited.insert(*income);
         let node = flow.get(income);
         let mut derived = current.clone(); // TODO merge this into visited to avoid clone?
         build_live_map(flow, node, live_map, visited, &mut derived);
-        visited.end_scope();
     }
 }

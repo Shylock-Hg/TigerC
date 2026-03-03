@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     asm::{Block, Instruction, Trace},
@@ -60,6 +60,28 @@ impl<'a> FlowGraph<'a> {
 
     pub fn get(&self, block: &Entry) -> &Node<&'a Block> {
         self.graph.node(block)
+    }
+
+    pub fn to_dot(&self) -> String {
+        let mut dot = String::from("digraph flowgraph {\n");
+
+        for (i, node) in self.graph.nodes().iter().enumerate() {
+            let label = node.value().start_label();
+            dot.push_str(&format!("    node_{} [label=\"{}\"];\n", i, label));
+        }
+
+        for (i, node) in self.graph.nodes().iter().enumerate() {
+            for &outcome in node.outcome() {
+                dot.push_str(&format!("    node_{} -> node_{};\n", i, outcome.0));
+            }
+        }
+
+        dot.push_str("}\n");
+        dot
+    }
+
+    pub fn nodes(&self) -> &Vec<Node<&'a Block>> {
+        self.graph.nodes()
     }
 }
 

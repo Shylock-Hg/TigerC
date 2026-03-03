@@ -148,7 +148,7 @@ impl<'a> Alloc<'a> {
     fn rewrite_allocation_temp(&self, temps: Vec<Temp>) -> Vec<Temp> {
         temps
             .into_iter()
-            .map(|t| self.color.get(&t).cloned().unwrap_or(t))
+            .map(|t| self.color.get(&t).cloned().unwrap())
             .collect()
     }
 
