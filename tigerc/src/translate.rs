@@ -260,6 +260,8 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::TypeExpr_::Binary(binary) => self.translate_binary(level, binary),
             type_ast::TypeExpr_::FuncCall(f, args) => {
                 let args = args.iter().map(|e| self.translate_expr(level, e)).collect();
+                // TODO: add external_c_function_call for C function
+                // TODO: pass the correct static link
                 Self::translate_function_call(*f, args)
             }
             type_ast::TypeExpr_::RecordExpr(r) => self.translate_record_ctor(level, r),
@@ -311,6 +313,12 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         self.done_label.push(done_label);
         let lower = self.translate_expr(level, &f.lower);
         let upper = self.translate_expr(level, &f.upper);
+        let upper = ir::Exp::BinOp {
+            // for_loop require [lower, upper)
+            op: ir::BinOp::Plus,
+            left: Box::new(upper),
+            right: Box::new(ir::Exp::Const(1)),
+        };
         let var = level
             .current
             .borrow_mut()

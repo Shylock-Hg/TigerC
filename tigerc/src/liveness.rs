@@ -206,16 +206,15 @@ fn build_live_map<'a>(
     let block = node.value();
     for (i, inst) in block.instructions.iter().enumerate().rev() {
         let def = inst.def();
-        def.iter().for_each(|v| {
-            current.remove(v);
-        });
-        current.extend(inst.use_());
+        current.extend(def.clone());
         live_map
             .entry(ProgramPoint { block, offset: i })
             .and_modify(|v| {
                 v.extend(current.clone());
             })
             .or_insert(current.clone());
+        current.retain(|v| !def.contains(v));
+        current.extend(inst.use_());
     }
     for income in node.income() {
         if visited.contains(income) {

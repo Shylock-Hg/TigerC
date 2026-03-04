@@ -40,6 +40,7 @@ pub trait Frame {
     fn word_size() -> i64;
     fn colors() -> Vec<Temp>;
     fn arg_registers() -> Vec<Temp>;
+    fn call_dests() -> Vec<Temp>;
 
     fn name(&self) -> &Label;
     fn parameters(&self) -> &[Variable];

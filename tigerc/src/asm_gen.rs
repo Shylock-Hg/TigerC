@@ -59,9 +59,9 @@ impl<F: Frame> Gen<F> {
                         let val_temp = self.munch_expression(val);
                         let dst_temp = self.munch_expression(*dst);
                         asm::Instruction::Move {
-                            assembly: "mov [`d0], `s0".to_string(),
-                            destination: vec![dst_temp],
-                            source: vec![val_temp],
+                            assembly: "mov [`s0], `s1".to_string(),
+                            destination: vec![],
+                            source: vec![dst_temp, val_temp],
                         }
                     }
                     (dst, ir::Exp::Mem(val)) => {
@@ -173,9 +173,9 @@ impl<F: Frame> Gen<F> {
             }
             ir::Exp::Mem(addr) => {
                 let addr_temp = self.munch_expression(*addr);
-                // mov temp, addr_temp
+                // mov temp, [addr_temp]
                 let inst = asm::Instruction::Move {
-                    assembly: "mov `d0, `s0".to_string(),
+                    assembly: "mov `d0, [`s0]".to_string(),
                     destination: vec![temp],
                     source: vec![addr_temp],
                 };
@@ -196,7 +196,7 @@ impl<F: Frame> Gen<F> {
                 let inst = asm::Instruction::Operation {
                     assembly: format!("call {}", func_label),
                     // need return/arguments for live analysis
-                    destination: vec![F::return_value()],
+                    destination: F::call_dests(),
                     source: argument_temps,
                     jump: None,
                 };
