@@ -72,7 +72,7 @@ pub fn compile_file(f: &str, output_asm: &str) {
             // 0 for c-style compatible
             writeln!(output_asm_f, "{}:", label).unwrap();
             writeln!(output_asm_f, "dq {}", val.len()).unwrap();
-            writeln!(output_asm_f, "db \"{}\", 0", to_nasm(val)).unwrap();
+            writeln!(output_asm_f, "db `{}`, 0", to_nasm(val)).unwrap();
         }
     });
 
