@@ -19,6 +19,7 @@ use crate::symbol_table::SymbolTable;
 use crate::temp::Label;
 use crate::temp::Temp;
 use crate::type_ast;
+use crate::type_inference::TypeInference;
 
 #[derive(Debug)]
 pub struct Level<F> {
@@ -67,6 +68,27 @@ impl<F: Frame> Level<F> {
 struct VarEntry<F> {
     level: Level<F>,
     var: frame::Variable,
+}
+
+enum VarFuncEntry<F> {
+    Var(VarEntry<F>),
+    Func(Level<F>),
+}
+
+impl<F> VarFuncEntry<F> {
+    pub fn var(&self) -> &VarEntry<F> {
+        match &self {
+            VarFuncEntry::Var(v) => v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn func(&self) -> &Level<F> {
+        match &self {
+            VarFuncEntry::Func(l) => l,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -136,7 +158,7 @@ macro_rules! translate_relation_op {
 
 pub struct Translate<F: Frame> {
     // the level variable defined in
-    var_table: SymbolTable<VarEntry<F>>,
+    var_table: SymbolTable<VarFuncEntry<F>>,
     fragments: Vec<Fragment<F>>,
 
     // latest done label of loop(for/while)
@@ -197,12 +219,14 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             let v = new_level.current.borrow().parameters()[i].clone();
             self.var_table.insert_symbol(
                 *f.args.keys().nth(i).unwrap(),
-                VarEntry {
+                VarFuncEntry::Var(VarEntry {
                     level: new_level.clone(),
                     var: v,
-                },
+                }),
             );
         }
+        self.var_table
+            .insert_symbol(f.name, VarFuncEntry::Func(new_level.clone())); // here for recursive function call
         let body = self.translate_expr(&new_level, &f.body);
         self.var_table.end_scope();
         let body = if matches!(f.ret_ty, type_ast::Type::Nothing) {
@@ -216,6 +240,8 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             frame: new_level.current.clone(),
             body,
         });
+        self.var_table
+            .insert_symbol(f.name, VarFuncEntry::Func(new_level));
     }
 
     fn translate_var_decl(&mut self, level: &Level<F>, v: &type_ast::VarDecl) -> Option<Statement> {
@@ -239,10 +265,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         };
         self.var_table.insert_symbol(
             v.name,
-            VarEntry {
+            VarFuncEntry::Var(VarEntry {
                 level: level.clone(),
                 var,
-            },
+            }),
         );
         s
     }
@@ -262,7 +288,16 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                 let args = args.iter().map(|e| self.translate_expr(level, e)).collect();
                 // TODO: add external_c_function_call for C function
                 // TODO: pass the correct static link
-                Self::translate_function_call(*f, args)
+                // A tricky judgment
+                if TypeInference::external_function()
+                    .iter()
+                    .any(|(n, _)| n == f)
+                {
+                    Self::translate_exteranl_c_function_call(*f, args)
+                } else {
+                    let func = self.var_table.get_symbol(f).unwrap().func();
+                    Self::translate_function_call(*f, args, func, level)
+                }
             }
             type_ast::TypeExpr_::RecordExpr(r) => self.translate_record_ctor(level, r),
             type_ast::TypeExpr_::ArrayExpr(a) => self.translate_array_ctor(level, a),
@@ -326,10 +361,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         self.var_table.begin_scope();
         self.var_table.insert_symbol(
             f.local,
-            VarEntry {
+            VarFuncEntry::Var(VarEntry {
                 level: level.clone(),
                 var: var.clone(),
-            },
+            }),
         );
         let body = self.translate_expr(level, &f.body);
         self.var_table.end_scope();
@@ -640,7 +675,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
 
     fn malloc(size: ir::Exp) -> ir::Exp {
         let args = vec![size];
-        Self::translate_function_call(ident_pool::symbol("talloc"), args)
+        Self::translate_exteranl_c_function_call(ident_pool::symbol("talloc"), args)
     }
 
     fn translate_record_ctor(&mut self, level: &Level<F>, r: &type_ast::RecordExpr) -> ir::Exp {
@@ -700,7 +735,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::Binary::Eq(l, r) => {
                 if let type_ast::Type::Str = l.ty {
                     let args = vec![self.translate_expr(level, l), self.translate_expr(level, r)];
-                    Self::translate_function_call(ident_pool::symbol("stringEqual"), args)
+                    Self::translate_exteranl_c_function_call(
+                        ident_pool::symbol("stringEqual"),
+                        args,
+                    )
                 } else {
                     translate_relation_op!(self, level, l, ir::CompareOp::Eq, r)
                 }
@@ -708,7 +746,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             type_ast::Binary::Ne(l, r) => {
                 if let type_ast::Type::Str = l.ty {
                     let args = vec![self.translate_expr(level, l), self.translate_expr(level, r)];
-                    let eq = Self::translate_function_call(ident_pool::symbol("stringEqual"), args);
+                    let eq = Self::translate_exteranl_c_function_call(
+                        ident_pool::symbol("stringEqual"),
+                        args,
+                    );
                     ir::Exp::BinOp {
                         op: ir::BinOp::Minus,
                         left: Box::new(ir::Exp::Const(1)),
@@ -801,7 +842,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                 let offset_exp = self.translate_expr(level, index);
                 ir::Exp::Mem(Box::new(ir::Exp::BinOp {
                     left: Box::new(ir::Exp::BinOp {
-                        op: ir::BinOp::Minus,
+                        op: ir::BinOp::Plus,
                         left: Box::new(lv),
                         right: Box::new(ir::Exp::Const(data_layout::ARRAY_HEADER_SIZE as i64)),
                     }),
@@ -820,13 +861,13 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         let mut level = level;
         let var = self.var_table.get_symbol(&v).unwrap();
         let mut fp = ir::Exp::Temp(F::fp());
-        while level.current != var.level.current {
+        while level.current != var.var().level.current {
             fp =
                 Self::translate_access_var(level.current.borrow().parameters().last().unwrap(), fp);
             level = level.parent.as_ref().unwrap();
         }
 
-        Self::translate_access_var(&var.var, fp)
+        Self::translate_access_var(&var.var().var, fp)
     }
 
     fn translate_var(var: &frame::Variable) -> ir::Exp {
@@ -844,7 +885,36 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         }
     }
 
-    fn translate_function_call(name: Symbol, args: Vec<ir::Exp>) -> ir::Exp {
+    fn translate_function_call(
+        name: Symbol,
+        args: Vec<ir::Exp>,
+        define_level: &Level<F>,
+        caller_level: &Level<F>,
+    ) -> ir::Exp {
+        let frame = caller_level.current.borrow();
+        let static_link = if define_level == caller_level {
+            // recursive call
+            Self::translate_access_var(frame.parameters().last().unwrap(), ir::Exp::Temp(F::fp()))
+        } else {
+            let mut fp = ir::Exp::Temp(F::fp());
+            let mut caller_level = caller_level;
+            while &**define_level.parent.as_ref().unwrap() != caller_level {
+                // reverse static link
+                fp = Self::translate_access_var(frame.parameters().last().unwrap(), fp);
+
+                caller_level = caller_level.parent.as_ref().unwrap();
+            }
+            fp
+        };
+        let mut args = args;
+        args.push(static_link); // pass static link by arguments
+        ir::Exp::Call {
+            func: Box::new(ir::Exp::Name(Label::new_named(name))),
+            args,
+        }
+    }
+
+    fn translate_exteranl_c_function_call(name: Symbol, args: Vec<ir::Exp>) -> ir::Exp {
         ir::Exp::Call {
             func: Box::new(ir::Exp::Name(Label::new_named(name))),
             args,

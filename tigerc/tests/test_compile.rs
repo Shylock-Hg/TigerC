@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod test {
 
+    use insta::assert_snapshot;
     use tiger_c::compile_file;
 
     #[test]
@@ -22,6 +23,7 @@ mod test {
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         );
+        assert_snapshot!(String::from_utf8_lossy(&output.stdout));
     }
 
     #[test]

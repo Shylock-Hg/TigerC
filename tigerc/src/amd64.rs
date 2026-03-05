@@ -208,6 +208,7 @@ impl Frame for FrameAmd64 {
             parameters: Default::default(),
             offset: 0,
         };
+        let _ = f.allocate_variable(ir::Variable(true)); // for 'push bsp'
         let parameters = parameters
             .into_iter()
             .map(|(_name, v)| f.allocate_variable(v))
@@ -301,38 +302,24 @@ impl Frame for FrameAmd64 {
         let arg_registers = Self::arg_registers();
         let arg_registers_len = arg_registers.len();
         // save arguments from register
-        let mut spilled_index = 0;
         for (parameter, arg_register) in self.parameters.iter().zip(arg_registers) {
-            match parameter.access {
-                Access::Frame(_) => spilled_index += 1, // In frame variable will be keep in frame
-                Access::Register(_) => {
-                    let destination = ir_gen::access_var(parameter, ir::Exp::Temp(Self::fp()));
-                    start_statements.push(ir::Statement::Move {
-                        dst: destination,
-                        val: ir::Exp::Temp(arg_register),
-                    });
-                }
-            }
+            let destination = ir_gen::access_var(parameter, ir::Exp::Temp(Self::fp()));
+            start_statements.push(ir::Statement::Move {
+                dst: destination,
+                val: ir::Exp::Temp(arg_register),
+            });
         }
         // save arguments from frame
-        for parameter in self.parameters.iter().skip(arg_registers_len).rev() {
-            match parameter.access {
-                Access::Frame(_) => spilled_index += 1, // In frame variable will be keep in frame
-                Access::Register(_) => {
-                    let destination = ir_gen::access_var(parameter, ir::Exp::Temp(Self::fp()));
-                    start_statements.push(ir::Statement::Move {
-                        dst: destination,
-                        val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
-                            left: Box::new(ir::Exp::Temp(Self::fp())),
-                            op: ir::BinOp::Plus,
-                            right: Box::new(ir::Exp::Const(
-                                Self::word_size() * spilled_index as i64,
-                            )),
-                        })),
-                    });
-                    spilled_index += 1;
-                }
-            }
+        for (i, parameter) in self.parameters.iter().skip(arg_registers_len).enumerate() {
+            let destination = ir_gen::access_var(parameter, ir::Exp::Temp(Self::fp()));
+            start_statements.push(ir::Statement::Move {
+                dst: destination,
+                val: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
+                    left: Box::new(ir::Exp::Temp(Self::fp())),
+                    op: ir::BinOp::Plus,
+                    right: Box::new(ir::Exp::Const(Self::word_size() * (i + 1) as i64)), // skip bsp
+                })),
+            });
         }
 
         // restore callee saved registers
