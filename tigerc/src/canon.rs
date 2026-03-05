@@ -358,6 +358,7 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
             ir::Statement::Jump { .. } => {
                 // do nothing
                 // TODO maybe we can merge block if next block be only jumped from this
+                new_blocks.push(current_block);
             }
             ir::Statement::CJump {
                 op, then, else_, ..
@@ -369,16 +370,20 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
                             // reverse condition, keep else branch be successor
                             *op = negative_cmp_op(*op);
                             swap(then, else_);
+                            new_blocks.push(current_block);
                         } else if label == else_ {
                             // do nothing
+                            new_blocks.push(current_block);
                         } else {
                             let new_else = Label::new();
-                            *else_ = new_else;
                             let mut new_block = Block::new(new_else);
                             new_block.push(ir::Statement::Jump {
-                                exp: ir::Exp::Name(*label),
-                                labels: vec![*label],
+                                exp: ir::Exp::Name(*else_),
+                                labels: vec![*else_],
                             });
+                            *else_ = new_else;
+
+                            new_blocks.push(current_block);
                             new_blocks.push(new_block);
                         }
                     } else {
@@ -388,7 +393,6 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
             }
             _ => unreachable!(),
         }
-        new_blocks.push(current_block);
     }
     new_blocks.push(Block::new(done_label));
     Trace { blocks: new_blocks }
