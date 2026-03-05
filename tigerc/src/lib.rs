@@ -122,12 +122,15 @@ fn to_nasm(s: &str) -> String {
     tokenizer::de_escape(s)
 }
 
+pub const TIGER_RUNTIME_LIB: &'static str = "TIGER_RUNTIME_LIB";
+
 fn link(obj: &str) {
+    let lib = std::env::var(TIGER_RUNTIME_LIB).unwrap_or("./target/debug/libruntime.a".to_string());
     let mut exec = PathBuf::from_str(obj).unwrap();
     exec.set_extension("t");
     let ret = std::process::Command::new("gcc")
         .arg(obj)
-        .arg("../target/debug/libruntime.a")
+        .arg(lib)
         .arg("-o")
         .arg(exec.to_str().unwrap())
         .output()

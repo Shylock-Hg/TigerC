@@ -3,15 +3,22 @@ mod test {
 
     use insta::assert_snapshot;
     use tiger_c::compile_file;
+    use tiger_c::TIGER_RUNTIME_LIB;
 
     #[test]
     fn test_compile1() {
+        unsafe {
+            std::env::set_var(TIGER_RUNTIME_LIB, "../target/debug/libruntime.a");
+        }
         let path = "tests/testcases/merge.tig";
         compile_file(path, "tests/testcases/merge.s");
     }
 
     #[test]
     fn test_compile2() {
+        unsafe {
+            std::env::set_var(TIGER_RUNTIME_LIB, "../target/debug/libruntime.a");
+        }
         let path = "tests/testcases/queens.tig";
         compile_file(path, "tests/testcases/queens.s");
         let output = std::process::Command::new("./tests/testcases/queens.t")
@@ -28,6 +35,9 @@ mod test {
 
     #[test]
     fn test_compile3() {
+        unsafe {
+            std::env::set_var(TIGER_RUNTIME_LIB, "../target/debug/libruntime.a");
+        }
         let path = "tests/testcases/hello.tig";
         compile_file(path, "tests/testcases/hello.s");
         let output = std::process::Command::new("./tests/testcases/hello.t")
