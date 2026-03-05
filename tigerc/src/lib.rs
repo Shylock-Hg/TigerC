@@ -29,7 +29,7 @@ pub mod translate;
 pub mod type_ast;
 pub mod type_inference;
 
-pub fn compile_file(f: &str, output_asm: &str) {
+pub fn compile_file(f: &str, output: &str) {
     let content = std::fs::read_to_string(f).unwrap();
     let it = tokenizer::tokenize(&content);
     let mut parser = parser::Parser::new(Box::new(it));
@@ -60,7 +60,10 @@ pub fn compile_file(f: &str, output_asm: &str) {
         })
         .collect::<Vec<_>>();
 
-    let mut output_asm_f = std::fs::File::create(output_asm).unwrap();
+    let output = std::path::PathBuf::from_str(output).unwrap();
+    let mut output_asm = output.clone();
+    output_asm.set_extension("s");
+    let mut output_asm_f = std::fs::File::create(&output_asm).unwrap();
     writeln!(output_asm_f, "global main").unwrap();
     for (n, _) in TypeInference::external_function() {
         writeln!(output_asm_f, "extern {}", n).unwrap();
@@ -94,9 +97,9 @@ pub fn compile_file(f: &str, output_asm: &str) {
     });
 
     output_asm_f.flush().unwrap();
-    nasm(output_asm);
+    nasm(output_asm.to_str().unwrap());
 
-    let mut obj = PathBuf::from_str(output_asm).unwrap();
+    let mut obj = output;
     obj.set_extension("o");
     link(obj.to_str().unwrap());
 }
