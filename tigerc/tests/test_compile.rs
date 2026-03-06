@@ -15,16 +15,10 @@ mod test {
         }
         let path = "tests/testcases/merge.tig";
         compile_file(path, "tests/testcases/merge.t");
-        //let output = std::process::Command::new("./tests/testcases/merge.t")
-        //.output()
-        //.unwrap();
-        //assert!(
-        //output.status.success(),
-        //"{}, {}",
-        //String::from_utf8_lossy(&output.stdout),
-        //String::from_utf8_lossy(&output.stderr)
-        //);
-        //assert_snapshot!(String::from_utf8_lossy(&output.stdout));
+        let output = io("./tests/testcases/merge.t", "1\n2\n4\n7\na\n8\n9\nb");
+        assert!(output.status.success());
+        // FIXME
+        // assert_snapshot!(String::from_utf8_lossy(&output.stdout));
     }
 
     #[test]
