@@ -188,6 +188,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         let level = Level::<F>::outermost();
         let main = self.translate_expr(&level, &ty_ast.0);
         let main = ir::Statement::Exp(main);
+        let main = level.current.borrow().proc_entry_exit1(main);
         self.fragments.push(Fragment::<F>::Function {
             label: Label::new_named(ident_pool::symbol("main")),
             frame: level.current.clone(),
@@ -788,16 +789,22 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     }
 
     fn translate_seq(&mut self, level: &Level<F>, seq: &Vec<type_ast::TypeExpr>) -> ir::Exp {
-        let mut s = ir_gen::no_op();
-        for e in &seq[0..seq.len() - 1] {
-            s = ir::Statement::Seq {
-                s1: Box::new(s),
-                s2: Box::new(ir::Statement::Exp(self.translate_expr(level, e))),
-            };
-        }
-        ir::Exp::ExpSeq {
-            stmt: Box::new(s),
-            exp: Box::new(self.translate_expr(level, seq.last().unwrap())),
+        if seq.len() == 0 {
+            ir::Exp::Const(0) // as unit
+        } else if seq.len() == 1 {
+            self.translate_expr(level, seq.last().unwrap())
+        } else {
+            let mut s = ir_gen::no_op();
+            for e in &seq[0..seq.len() - 1] {
+                s = ir::Statement::Seq {
+                    s1: Box::new(s),
+                    s2: Box::new(ir::Statement::Exp(self.translate_expr(level, e))),
+                };
+            }
+            ir::Exp::ExpSeq {
+                stmt: Box::new(s),
+                exp: Box::new(self.translate_expr(level, seq.last().unwrap())),
+            }
         }
     }
 

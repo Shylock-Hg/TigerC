@@ -12,8 +12,11 @@ impl Layout {
     }
 }
 
+pub const MAX_ALIGN: usize = 16; // max align for general allocation in x86_64
+
 pub fn allocate(layout: &Layout) -> i64 {
     unsafe {
-        std::alloc::alloc(std::alloc::Layout::from_size_align(layout.size(), 1).unwrap()) as i64
+        std::alloc::alloc(std::alloc::Layout::from_size_align(layout.size(), MAX_ALIGN).unwrap())
+            as i64
     }
 }

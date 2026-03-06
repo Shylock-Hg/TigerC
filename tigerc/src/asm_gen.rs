@@ -193,10 +193,12 @@ impl<F: Frame> Gen<F> {
                 let argument_temps = self.munch_args(args);
                 let argument_temps_len = argument_temps.len();
                 // call function_temp
+                let dests = F::call_dests();
+                // dests.extend(F::arg_registers().into_iter().take(argument_temps_len));
                 let inst = asm::Instruction::Operation {
                     assembly: format!("call {}", func_label),
                     // need return/arguments for live analysis
-                    destination: F::call_dests(),
+                    destination: dests,
                     source: argument_temps,
                     jump: None,
                 };

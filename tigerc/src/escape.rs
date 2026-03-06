@@ -105,15 +105,11 @@ impl Escape {
                 for d in decls.iter_mut() {
                     match d {
                         ast::Decl::Var(v) => {
-                            let new_var = v.name;
-                            self.e = Some(v.escape.clone());
+                            self.escape_expr(&mut v.init, depth, depth, var);
                             for e in sequence.iter_mut() {
-                                self.escape_expr(e, depth, depth, &Some(new_var));
+                                self.escape_expr(e, depth, depth, var);
                             }
-                            for (new_var, escape) in &new_vars {
-                                self.e = Some(escape.clone());
-                                self.escape_expr(&mut v.init, depth, depth, &Some(*new_var));
-                            }
+                            let new_var = v.name;
                             new_vars.push((new_var, v.escape.clone()));
                         }
                         ast::Decl::Func(f) => {

@@ -138,6 +138,14 @@ impl TypeInference {
                 }),
             ),
             (
+                ident_pool::symbol("printi"),
+                type_ast::Type::Function(type_ast::Function {
+                    name: ident_pool::symbol("printi"),
+                    params: vec![type_ast::Type::Int],
+                    return_ty: Box::new(type_ast::Type::Nothing),
+                }),
+            ),
+            (
                 ident_pool::symbol("getchar"),
                 type_ast::Type::Function(type_ast::Function {
                     name: ident_pool::symbol("getchar"),
@@ -401,12 +409,7 @@ impl TypeInference {
                 }
             },
             ast::Expr::FuncCall(f, args) => {
-                let ty_func = self
-                    .variable_symbol_table
-                    .get_symbol(f)
-                    .unwrap()
-                    .ty
-                    .clone();
+                let ty_func = self.variable_symbol_table.get_symbol(f).unwrap().ty.clone();
 
                 match ty_func {
                     type_ast::Type::Function(tf) => {
@@ -702,12 +705,7 @@ impl TypeInference {
     fn infer_left_value(&mut self, left: &ast::LeftValue) -> Result<type_ast::LeftValue> {
         match &left {
             ast::LeftValue::Variable(v) => {
-                let ty = self
-                    .variable_symbol_table
-                    .get_symbol(v)
-                    .unwrap()
-                    .ty
-                    .clone();
+                let ty = self.variable_symbol_table.get_symbol(v).unwrap().ty.clone();
                 Ok(type_ast::LeftValue {
                     left: type_ast::LeftValue_::Variable(*v),
                     ty,

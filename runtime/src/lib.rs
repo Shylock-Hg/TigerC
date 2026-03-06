@@ -41,6 +41,7 @@ use std::ffi::CStr;
 use std::io::{stdin, stdout, Read, Write};
 use std::os::raw::c_char;
 
+use allocator::MAX_ALIGN;
 use data_layout::STRING_HEADER_SIZE;
 
 const WORD_SIZE: usize = 8;
@@ -174,7 +175,7 @@ extern "C" fn print(string: *const c_char) {
 //}
 
 #[unsafe(no_mangle)]
-extern "C" fn printi(num: i32) {
+extern "C" fn printi(num: i64) {
     println!("{}", num);
 }
 
@@ -196,8 +197,6 @@ extern fn _start() {
     }
     process::exit(0);
 }*/
-
-const MAX_ALIGN: usize = 16; // max align for general allocation in x86_64
 
 // Just a simple wrap to avoid libc malloc
 #[unsafe(no_mangle)]

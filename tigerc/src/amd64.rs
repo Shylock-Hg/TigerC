@@ -236,6 +236,7 @@ impl Frame for FrameAmd64 {
     fn call_dests() -> Vec<Temp> {
         let mut res = Self::caller_saved_registers();
         res.push(Self::return_value());
+        // TODO: Check the real count of argument registers used by callee
         res.extend(Self::arg_registers());
         res
     }
@@ -284,7 +285,7 @@ impl Frame for FrameAmd64 {
         self.allocate_variable(var)
     }
 
-    fn proc_entry_exit1(&mut self, statement: ir::Statement) -> ir::Statement {
+    fn proc_entry_exit1(&self, statement: ir::Statement) -> ir::Statement {
         let mut start_statements = vec![];
         let mut end_statements = vec![];
 
