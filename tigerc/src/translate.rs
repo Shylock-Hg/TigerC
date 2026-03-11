@@ -568,7 +568,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
                 }),
                 right: Box::new(ir::Exp::BinOp {
                     op: ir::BinOp::Multiply,
-                    left: Box::new(ir::Exp::Temp(iter.clone())),
+                    left: Box::new(ir::Exp::Temp(iter)),
                     right: Box::new(ir::Exp::Const(F::word_size())),
                 }),
             })),
@@ -789,7 +789,7 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
     }
 
     fn translate_seq(&mut self, level: &Level<F>, seq: &Vec<type_ast::TypeExpr>) -> ir::Exp {
-        if seq.len() == 0 {
+        if seq.is_empty() {
             ir::Exp::Const(0) // as unit
         } else if seq.len() == 1 {
             self.translate_expr(level, seq.last().unwrap())

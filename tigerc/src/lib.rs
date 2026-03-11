@@ -81,7 +81,7 @@ pub fn compile_file(f: &str, output: &str) {
 
     writeln!(output_asm_f, "section .text").unwrap();
     fragments.into_iter().for_each(|f| match f {
-        canon::Fragment::Function { label, frame, body } => {
+        canon::Fragment::Function { label: _, frame, body } => {
             let mut gen = asm_gen::Gen::<amd64::FrameAmd64>::new(body.1);
             gen.munch_trace(body.0);
             let mut trace = gen.result();
@@ -125,7 +125,7 @@ fn to_nasm(s: &str) -> String {
     tokenizer::de_escape(s)
 }
 
-pub const TIGER_RUNTIME_LIB: &'static str = "TIGER_RUNTIME_LIB";
+pub const TIGER_RUNTIME_LIB: &str = "TIGER_RUNTIME_LIB";
 
 fn link(obj: &str) {
     let lib = std::env::var(TIGER_RUNTIME_LIB).unwrap_or("./target/debug/libruntime.a".to_string());

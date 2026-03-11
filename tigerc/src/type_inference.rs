@@ -312,7 +312,7 @@ impl TypeInference {
         }
     }
 
-    fn infer_decl_list(&mut self, decl_list: &Vec<ast::Decl>) -> Result<Vec<type_ast::TypeDecl>> {
+    fn infer_decl_list(&mut self, decl_list: &[ast::Decl]) -> Result<Vec<type_ast::TypeDecl>> {
         let mut typed_decl_list = vec![];
         for decl in decl_list.iter() {
             typed_decl_list.push(self.infer_decl(decl)?);
@@ -756,7 +756,7 @@ impl TypeInference {
         }
     }
 
-    fn infer_field_list(&self, fields: &Vec<ast::Field>) -> IndexMap<Symbol, type_ast::Type> {
+    fn infer_field_list(&self, fields: &[ast::Field]) -> IndexMap<Symbol, type_ast::Type> {
         fields
             .iter()
             .map(|f| {
@@ -770,7 +770,7 @@ impl TypeInference {
 
     fn infer_parameter_list(
         &self,
-        parameters: &Vec<ast::Parameter>,
+        parameters: &[ast::Parameter],
     ) -> IndexMap<Symbol, type_ast::Parameter> {
         parameters
             .iter()

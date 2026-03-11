@@ -43,7 +43,7 @@ struct Alloc<'a> {
 }
 
 fn degree_of_inter_graph<F: Frame>(mut degree: HashMap<Temp, usize>) -> HashMap<Temp, usize> {
-    degree.extend(F::colors().into_iter().map(|v| (v, usize::max_value())));
+    degree.extend(F::colors().into_iter().map(|v| (v, usize::MAX)));
     degree
 }
 
@@ -58,8 +58,7 @@ impl<'a> Alloc<'a> {
         let k = colors.len();
         let initial = inter_g
             .degree
-            .iter()
-            .map(|(k, _)| k)
+            .keys()
             .filter(|v| !colors.contains(v))
             .collect::<Vec<_>>();
         let mut spill_work_list = vec![];

@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Iter, HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet},
     hash::Hash,
     ptr,
 };
@@ -9,8 +9,6 @@ use crate::{
     flow::FlowGraph,
     frame::Frame,
     graph::{Entry, Node},
-    ir::LowerIdent,
-    symbol_table::SymbolTable,
     temp::{Label, Temp},
 };
 
@@ -55,6 +53,12 @@ pub struct InterferenceGraph {
     pub degree: HashMap<Temp, usize>,
 }
 
+impl Default for InterferenceGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InterferenceGraph {
     pub fn new() -> Self {
         InterferenceGraph {
@@ -64,7 +68,7 @@ impl InterferenceGraph {
         }
     }
 
-    pub fn add_edge(&mut self, a: Temp, b: Temp, precolored: &Vec<Temp>) {
+    pub fn add_edge(&mut self, a: Temp, b: Temp, precolored: &[Temp]) {
         if !self.adj_set.contains(&(a, b)) && a != b {
             self.adj_set.insert((a, b));
             self.adj_set.insert((b, a));

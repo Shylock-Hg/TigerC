@@ -301,7 +301,7 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
     const END_INDEX: usize = usize::MAX;
     label_index.insert(done_label, END_INDEX);
 
-    fn mark(marks: &Vec<bool>, index: usize) -> bool {
+    fn mark(marks: &[bool], index: usize) -> bool {
         if index == END_INDEX {
             true
         } else {
@@ -399,7 +399,7 @@ fn trace_schedule(blocks: Vec<Block>, done_label: Label) -> Trace {
 }
 
 #[allow(unused)]
-fn debug_trace(blocks: &Vec<Block>, traces: &Vec<usize>) {
+fn debug_trace(blocks: &[Block], traces: &[usize]) {
     println!("trace:");
     for i in traces {
         println!("{:#?}", blocks[*i].0);
