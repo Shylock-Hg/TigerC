@@ -462,7 +462,7 @@ impl<'a> Parser<'a> {
                 Box::new(left),
                 Box::new(self.parse_sub_expr(precedence)),
             )),
-            Token::Or => ast::Expr::Binary(ast::Binary::And(
+            Token::Or => ast::Expr::Binary(ast::Binary::Or(
                 Box::new(left),
                 Box::new(self.parse_sub_expr(precedence)),
             )),
@@ -800,7 +800,7 @@ mod tests {
         let negative = parser.parse_expr();
         assert_eq!(
             format!("{}", negative),
-            "((((1 + (2 * 4)) - (5 / 3)) > 6) & (1 & 0))"
+            "((((1 + (2 * 4)) - (5 / 3)) > 6) | (1 & 0))"
         );
     }
 
@@ -814,7 +814,7 @@ mod tests {
         let negative = parser.parse_expr();
         assert_eq!(
             format!("{}", negative),
-            "((((-1 + (2 * 4)) - (5 / 3)) > 6) & (1 & 0))"
+            "((((-1 + (2 * 4)) - (5 / 3)) > 6) | (1 & 0))"
         );
     }
 
@@ -828,7 +828,7 @@ mod tests {
         let negative = parser.parse_expr();
         assert_eq!(
             format!("{}", negative),
-            "((((-1 + (2 * 4)) - (5 / -3)) > 6) & (1 & 0))"
+            "((((-1 + (2 * 4)) - (5 / -3)) > 6) | (1 & 0))"
         );
     }
 
@@ -842,7 +842,7 @@ mod tests {
         let negative = parser.parse_expr();
         assert_eq!(
             format!("{}", negative),
-            "((((-1 + (2 * 4)) - (-5 / -3)) > 6) & (1 & 0))"
+            "((((-1 + (2 * 4)) - (-5 / -3)) > 6) | (1 & 0))"
         );
     }
 
