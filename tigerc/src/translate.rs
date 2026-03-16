@@ -898,15 +898,17 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
         define_level: &Level<F>,
         caller_level: &Level<F>,
     ) -> ir::Exp {
-        let frame = caller_level.current.borrow();
         let static_link = if define_level == caller_level {
             // recursive call
+            let frame = caller_level.current.borrow();
             Self::translate_access_var(frame.parameters().last().unwrap(), ir::Exp::Temp(F::fp()))
         } else {
             let mut fp = ir::Exp::Temp(F::fp());
             let mut caller_level = caller_level;
             while &**define_level.parent.as_ref().unwrap() != caller_level {
-                // reverse static link
+                // reverse static link - need to borrow frame inside the loop
+                // so we get the correct frame for the current caller_level
+                let frame = caller_level.current.borrow();
                 fp = Self::translate_access_var(frame.parameters().last().unwrap(), fp);
 
                 caller_level = caller_level.parent.as_ref().unwrap();
