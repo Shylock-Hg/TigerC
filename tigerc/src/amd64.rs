@@ -209,9 +209,27 @@ impl Frame for FrameAmd64 {
             offset: 0,
         };
         let _ = f.allocate_variable(ir::Variable(true)); // for 'push bsp'
+        
+        // Get the list of argument registers to identify which parameters
+        // are passed in registers vs. on the stack
+        let arg_regs = Self::arg_registers();
+        let arg_reg_count = arg_regs.len();
+        
         let parameters = parameters
             .into_iter()
-            .map(|(_name, v)| f.allocate_variable(v))
+            .enumerate()
+            .map(|(i, (_name, v))| {
+                // Parameters passed in argument registers must always escape to the frame.
+                // This prevents the register allocator from reusing the argument register
+                // (e.g., rdi) as a temporary before the parameter value is saved.
+                if i < arg_reg_count {
+                    // Force escape for register-passed parameters
+                    f.allocate_variable(ir::Variable(true))
+                } else {
+                    // Stack-passed parameters use their original escape status
+                    f.allocate_variable(v)
+                }
+            })
             .collect::<Vec<_>>();
         f.parameters = parameters;
         f
