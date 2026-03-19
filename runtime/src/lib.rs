@@ -80,11 +80,22 @@ extern "C" fn chr(num: i64) -> *const c_char {
 #[unsafe(no_mangle)]
 extern "C" fn getchar() -> *const c_char {
     let stdin = stdin();
-    let char = stdin
-        .bytes()
-        .next()
-        .expect("next char")
-        .expect("read stdin") as char;
+    let char_opt = stdin.bytes().next();
+
+    // Handle EOF by returning an empty string
+    let char = match char_opt {
+        Some(Ok(byte)) => byte as char,
+        _ => {
+            // Return empty string on EOF or error
+            let ptr = allocator::allocate(&allocator::Layout::String(0));
+            let string = ptr as *mut c_char;
+            unsafe {
+                let string_ptr = string_offset(string) as *mut c_char;
+                *string_ptr = 0;
+            }
+            return string;
+        }
+    };
 
     //let ptr =
     //GARBAGE_COLLECTOR.with(|collector| collector.borrow_mut().allocate(Layout::String(1)));
