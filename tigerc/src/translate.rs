@@ -688,16 +688,18 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             (offset, v)
         });
         let result = Temp::new();
+        // First move malloc result to result temp
         let mut stmt = ir::Statement::Move {
             dst: ir::Exp::Temp(result),
-            val: p.clone(),
+            val: p,
         };
+        // Then use result temp for field initializations (not p.clone() which would duplicate the call)
         for i_exp in init_exp {
             let (offset, v) = i_exp;
             let mv = ir::Statement::Move {
                 dst: ir::Exp::Mem(Box::new(ir::Exp::BinOp {
                     op: ir::BinOp::Plus,
-                    left: Box::new(p.clone()),
+                    left: Box::new(ir::Exp::Temp(result)),
                     right: Box::new(ir::Exp::Const(offset)),
                 })),
                 val: v,
@@ -906,11 +908,10 @@ impl<F: Frame + PartialEq + Eq> Translate<F> {
             let mut fp = ir::Exp::Temp(F::fp());
             let mut caller_level = caller_level;
             while &**define_level.parent.as_ref().unwrap() != caller_level {
-                // reverse static link - need to borrow frame inside the loop
-                // so we get the correct frame for the current caller_level
+                // reverse static link - must borrow current frame inside the loop
+                // because caller_level changes with each iteration
                 let frame = caller_level.current.borrow();
                 fp = Self::translate_access_var(frame.parameters().last().unwrap(), fp);
-
                 caller_level = caller_level.parent.as_ref().unwrap();
             }
             fp
