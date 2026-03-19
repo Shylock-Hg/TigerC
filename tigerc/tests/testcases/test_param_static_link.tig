@@ -1,0 +1,15 @@
+let
+    var buffer := getchar()
+
+    function test(s: string) =
+        let
+            function test1() =
+                printi(ord(buffer))
+        in
+            test1()
+        end
+
+in
+    test("x");
+    0
+end

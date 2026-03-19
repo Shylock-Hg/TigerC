@@ -15,9 +15,9 @@ mod test {
         }
         let path = "tests/testcases/merge.tig";
         compile_file(path, "tests/testcases/merge.t");
-        let output = io("./tests/testcases/merge.t", "1\n2\n4\n7\na\n8\n9\nb");
+        let output = io("./tests/testcases/merge.t", "1\n2\n4\n7\na\n8\n9\nb\n");
         assert!(output.status.success());
-        //assert_snapshot!(String::from_utf8_lossy(&output.stdout));
+        assert_snapshot!(String::from_utf8_lossy(&output.stdout));
     }
 
     #[test]

@@ -1,0 +1,5 @@
+---
+source: tigerc/tests/test_compile.rs
+expression: "String::from_utf8_lossy(&output.stdout)"
+---
+1 2 4 7 8 9
