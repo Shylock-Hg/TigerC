@@ -259,7 +259,7 @@ impl TypeInference {
                 let ty =
                     v.ty.map(|t| self.type_symbol_table.get_symbol(&t).unwrap().ty.clone())
                         .unwrap_or(typed_init.ty.clone());
-                if typed_init.ty != ty {
+                if !typed_init.ty.can_assign(&ty) {
                     return Err(InferError::conflict_type(&ty, &typed_init.ty));
                 }
                 self.variable_symbol_table
@@ -466,21 +466,18 @@ impl TypeInference {
                             )));
                         }
                         let ty_arg = self.infer_expr(ee)?;
-                        if t != &ty_arg.ty {
-                            if let type_ast::Type::Name(n) = t {
-                                let t = self.type_symbol_table.get_symbol(n).unwrap().ty.clone();
-                                if t != ty_arg.ty {
-                                    return Err(InferError::new(format!(
-                                        "Expect {:?} type for field {}, got {:?}.",
-                                        t, f, ty_arg.ty,
-                                    )));
-                                }
-                            } else {
-                                return Err(InferError::new(format!(
-                                    "Expect {:?} type for field {}, got {:?}.",
-                                    t, f, ty_arg.ty,
-                                )));
-                            }
+                        // Check if the argument can be assigned to the field type
+                        // This allows nil to be assigned to record fields
+                        let field_ty = if let type_ast::Type::Name(n) = t {
+                            self.type_symbol_table.get_symbol(n).unwrap().ty.clone()
+                        } else {
+                            t.clone()
+                        };
+                        if !ty_arg.ty.can_assign(&field_ty) {
+                            return Err(InferError::new(format!(
+                                "Expect {:?} type for field {}, got {:?}.",
+                                field_ty, f, ty_arg.ty,
+                            )));
                         }
                         init.push((*f, ty_arg));
                     }
