@@ -117,8 +117,14 @@ fn lift_exq_seq_exp(exp: ir::Exp) -> (ir::Statement, ir::Exp) {
         }
         ir::Exp::Call { func, args } => {
             let (stmt, args) = reorder2(&args);
-            let call = ir::Exp::Call { func, args }; // FIXME: lift func exp?
-            (stmt, call)
+            let call = ir::Exp::Call { func, args };
+            // Lift call result to a temporary to avoid duplicate calls if expression is reused
+            let tp = ir::Exp::Temp(Temp::new());
+            let mv = ir::Statement::Move {
+                dst: tp.clone(),
+                val: call,
+            };
+            (concat(stmt, mv), tp)
         }
         ir::Exp::ExpSeq { stmt, exp } => {
             let stmt = lift_exp_seq(*stmt);
