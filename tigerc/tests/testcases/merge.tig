@@ -66,5 +66,6 @@ let type any = {any: int}
             printlist(l.rest)
         )
 in
-    printlist(merge(readlist(), readlist()))
+    printlist(merge(readlist(), readlist()));
+    0
 end

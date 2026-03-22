@@ -14,4 +14,5 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags:
+      - run: cargo build -p runtime
       - run: cargo test --all-features
