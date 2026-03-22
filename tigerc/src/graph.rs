@@ -69,10 +69,7 @@ impl<T> Graph<T> {
         T: PartialEq,
     {
         // TODO speed up by HashTable
-        self.nodes
-            .iter()
-            .position(|v| *v.value() == *t)
-            .map(Entry)
+        self.nodes.iter().position(|v| *v.value() == *t).map(Entry)
     }
 
     pub fn node(&self, entry: &Entry) -> &Node<T> {

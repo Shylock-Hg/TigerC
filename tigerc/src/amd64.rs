@@ -209,12 +209,12 @@ impl Frame for FrameAmd64 {
             offset: 0,
         };
         let _ = f.allocate_variable(ir::Variable(true)); // for 'push bsp'
-        
+
         // Get the list of argument registers to identify which parameters
         // are passed in registers vs. on the stack
         let arg_regs = Self::arg_registers();
         let arg_reg_count = arg_regs.len();
-        
+
         let parameters = parameters
             .into_iter()
             .enumerate()

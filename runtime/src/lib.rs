@@ -38,7 +38,7 @@ use tiger_c::data_layout;
 
 use std::ffi::CStr;
 //use std::process;
-use std::io::{stdin, stdout, Read, Write};
+use std::io::{Read, Write, stdin, stdout};
 use std::os::raw::c_char;
 
 use allocator::MAX_ALIGN;

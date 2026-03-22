@@ -30,10 +30,7 @@ impl<V, K> MultiMap<V, K> {
     where
         K: Eq + Hash,
     {
-        self.inner
-            .entry(key)
-            .or_default()
-            .push_back(value);
+        self.inner.entry(key).or_default().push_back(value);
     }
 
     pub fn remove(&mut self, key: &K)
