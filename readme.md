@@ -4,7 +4,7 @@ TigerC is a complete compiler implementation for the Tiger programming language,
 
 ## Features
 
-- **Full Compiler Pipeline**: Lexical analysis → Parsing → Semantic analysis → IR generation → x86-64 assembly → Executable
+- **Full Compiler Pipeline**: Lexical analysis → Parsing → Semantic analysis → IR generation → x86-64 assembly -> Register allocation → Executable
 - **Modern Implementation**: Written in Rust with clean, modular architecture
 - **Tiger Language Support**: Complete implementation including nested functions, arrays, records, and type inference
 - **x86-64 Code Generation**: Native assembly output with register allocation
@@ -78,7 +78,8 @@ cargo run -- ./tigerc/tests/testcases/queens.tig ./tigerc/tests/testcases/queens
 5. **Translation** (`translate.rs`, `ir_gen.rs`) - AST to Intermediate Representation
 6. **Canonicalization** (`canon.rs`) - IR normalization and basic block formation
 7. **Code Generation** (`asm_gen.rs`, `amd64.rs`) - x86-64 assembly generation
-8. **Assembly & Linking** - NASM + GCC to produce executable
+8. **Register Allocation** (`reg_alloc.rs`) - Register allocation
+9. **Linking** - NASM + GCC to produce executable
 
 ## Testing
 
@@ -117,7 +118,7 @@ let
     var N := 8
     type intArray = array of int
     var col := intArray[N] of 0
-    
+
     function printBoard() = (
         for i := 0 to N - 1 do (
             for j := 0 to N - 1 do
