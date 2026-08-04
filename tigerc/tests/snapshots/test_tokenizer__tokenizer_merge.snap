@@ -394,4 +394,6 @@ Posed { node: OpenParen, pos: Pos { line: 69, column: 41 } }
 Posed { node: CloseParen, pos: Pos { line: 69, column: 42 } }
 Posed { node: CloseParen, pos: Pos { line: 69, column: 43 } }
 Posed { node: CloseParen, pos: Pos { line: 69, column: 44 } }
-Posed { node: Ident(end), pos: Pos { line: 70, column: 1 } }
+Posed { node: SemiColon, pos: Pos { line: 69, column: 45 } }
+Posed { node: Number(0), pos: Pos { line: 70, column: 5 } }
+Posed { node: Ident(end), pos: Pos { line: 71, column: 1 } }
